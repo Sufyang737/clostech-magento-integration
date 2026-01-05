@@ -32,10 +32,10 @@ class ProductList implements ProductListInterface
         $this->logger = $logger;
     }
 
-    public function getList(?int $page = 1, ?int $pageSize = 50): array
+    public function getList(?int $page = 1, ?int $pageSize = 50): string
     {
         try {
-        
+            
             $page = max(1, $page ?? 1);
             $pageSize = min(100, max(1, $pageSize ?? 50));
 
@@ -48,7 +48,7 @@ class ProductList implements ProductListInterface
             $products = [];
 
             foreach ($searchResults->getItems() as $product) {
-
+                // Solo procesamos productos padre
                 if ($this->isChildProduct($product)) {
                     continue;
                 }
@@ -57,7 +57,7 @@ class ProductList implements ProductListInterface
                 $products[] = $productData;
             }
 
-            return [
+            $response = [
                 'success' => true,
                 'page' => $page,
                 'page_size' => $pageSize,
@@ -65,12 +65,14 @@ class ProductList implements ProductListInterface
                 'products' => $products
             ];
 
+            return json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+
         } catch (\Exception $e) {
             $this->logger->error('Clostech Products Endpoint Error: ' . $e->getMessage(), [
                 'exception' => $e
             ]);
             
-            return [
+            $errorResponse = [
                 'success' => false,
                 'error' => 'An error occurred while fetching products',
                 'page' => $page ?? 1,
@@ -78,6 +80,8 @@ class ProductList implements ProductListInterface
                 'total_count' => 0,
                 'products' => []
             ];
+
+            return json_encode($errorResponse, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
     }
 
@@ -133,11 +137,6 @@ class ProductList implements ProductListInterface
 
     private function determineClothesType($product): string
     {
-        // TODO: Etapa futura - implementar detección automática o atributo custom
-        // Posible implementación:
-        // $typeClothes = $product->getData('clostech_type_clothes');
-        // return $typeClothes ?: 'none';
-        
         return 'none';
     }
 
@@ -150,7 +149,6 @@ class ProductList implements ProductListInterface
         }
 
         try {
-
             $category = $this->categoryRepository->get($categoryIds[0]);
             return $category->getName();
         } catch (\Exception $e) {
