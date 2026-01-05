@@ -57,7 +57,7 @@ class ProductList implements ProductListInterface
                 $products[] = $productData;
             }
 
-            return [
+            return (object) [
                 'success' => true,
                 'page' => $page,
                 'page_size' => $pageSize,
@@ -70,7 +70,7 @@ class ProductList implements ProductListInterface
                 'exception' => $e
             ]);
             
-            return [
+            return (object) [
                 'success' => false,
                 'error' => 'An error occurred while fetching products',
                 'page' => $page ?? 1,
