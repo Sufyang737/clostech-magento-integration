@@ -33,7 +33,7 @@ class ProductList implements ProductListInterface
         $this->logger = $logger;
     }
 
-    public function getList(?int $page = 1, ?int $pageSize = 50): \Magento\Framework\DataObject
+    public function getList(?int $page = 1, ?int $pageSize = 50): array
     {
         try {
             $page = max(1, $page ?? 1);
@@ -48,7 +48,6 @@ class ProductList implements ProductListInterface
             $products = [];
 
             foreach ($searchResults->getItems() as $product) {
-
                 if ($this->isChildProduct($product)) {
                     continue;
                 }
@@ -65,7 +64,8 @@ class ProductList implements ProductListInterface
                 'products' => $products
             ];
 
-            return new DataObject($response);
+            $dataObject = new DataObject($response);
+            return $dataObject->__toArray();
 
         } catch (\Exception $e) {
             $this->logger->error('Clostech Products Endpoint Error: ' . $e->getMessage(), [
@@ -81,7 +81,8 @@ class ProductList implements ProductListInterface
                 'products' => []
             ];
 
-            return new DataObject($errorResponse);
+            $dataObject = new DataObject($errorResponse);
+            return $dataObject->__toArray();
         }
     }
 
