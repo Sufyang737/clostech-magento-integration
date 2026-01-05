@@ -6,6 +6,8 @@ namespace Clostech\Integration\Model;
 use Clostech\Integration\Api\ProductListInterface;
 use Clostech\Integration\Api\Data\ProductsResponseInterface;
 use Clostech\Integration\Api\Data\ProductsResponseInterfaceFactory;
+use Clostech\Integration\Api\Data\ProductInterfaceFactory;
+use Clostech\Integration\Api\Data\VariantInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -20,6 +22,8 @@ class ProductList implements ProductListInterface
     private Configurable $configurableType;
     private LoggerInterface $logger;
     private ProductsResponseInterfaceFactory $responseFactory;
+    private ProductInterfaceFactory $productFactory;
+    private VariantInterfaceFactory $variantFactory;
 
     public function __construct(
         ProductRepositoryInterface $productRepository,
@@ -27,7 +31,9 @@ class ProductList implements ProductListInterface
         SearchCriteriaBuilder $searchCriteriaBuilder,
         Configurable $configurableType,
         LoggerInterface $logger,
-        ProductsResponseInterfaceFactory $responseFactory
+        ProductsResponseInterfaceFactory $responseFactory,
+        ProductInterfaceFactory $productFactory,
+        VariantInterfaceFactory $variantFactory
     ) {
         $this->productRepository = $productRepository;
         $this->categoryRepository = $categoryRepository;
@@ -35,6 +41,8 @@ class ProductList implements ProductListInterface
         $this->configurableType = $configurableType;
         $this->logger = $logger;
         $this->responseFactory = $responseFactory;
+        $this->productFactory = $productFactory;
+        $this->variantFactory = $variantFactory;
     }
 
     public function getList(?int $page = 1, ?int $pageSize = 50): ProductsResponseInterface
@@ -86,25 +94,25 @@ class ProductList implements ProductListInterface
         }
     }
 
-    private function buildProductData($product): array
+    private function buildProductData($product)
     {
-        $productData = [
-            'store_id' => '',
-            'name' => $product->getName(),
-            'sku' => $product->getSku(),
-            'type_clothes' => $this->determineClothesType($product),
-            'use_clostech' => true,
-            'category' => $this->getPrimaryCategory($product),
-            'tags' => $this->getProductTags($product),
-            'use_size' => false,
-            'use_recomendation_size' => false
-        ];
+        $productDto = $this->productFactory->create();
+        $productDto->setStoreId('');
+        $productDto->setName($product->getName());
+        $productDto->setSku($product->getSku());
+        $productDto->setTypeClothes($this->determineClothesType($product));
+        $productDto->setUseClostech(true);
+        $productDto->setCategory($this->getPrimaryCategory($product));
+        $productDto->setTags($this->getProductTags($product));
+        $productDto->setUseSize(false);
+        $productDto->setUseRecomendationSize(false);
 
         if ($product->getTypeId() === 'configurable') {
-            $productData['variants'] = $this->getVariants($product);
+            $variants = $this->getVariants($product);
+            $productDto->setVariants($variants);
         }
 
-        return $productData;
+        return $productDto;
     }
 
     private function getVariants($product): array
@@ -116,13 +124,15 @@ class ProductList implements ProductListInterface
             foreach ($childrenIds[0] as $childId) {
                 try {
                     $child = $this->productRepository->getById($childId);
-                    $variants[] = [
-                        'name' => $child->getName(),
-                        'sku' => $child->getSku(),
-                        'type_clothes' => $this->determineClothesType($child),
-                        'category' => $this->getPrimaryCategory($child),
-                        'tags' => $this->getProductTags($child)
-                    ];
+                    
+                    $variantDto = $this->variantFactory->create();
+                    $variantDto->setName($child->getName());
+                    $variantDto->setSku($child->getSku());
+                    $variantDto->setTypeClothes($this->determineClothesType($child));
+                    $variantDto->setCategory($this->getPrimaryCategory($child));
+                    $variantDto->setTags($this->getProductTags($child));
+                    
+                    $variants[] = $variantDto;
                 } catch (\Exception $e) {
                     $this->logger->warning('Error loading variant: ' . $childId, [
                         'parent_sku' => $product->getSku(),

@@ -5,4 +5,8 @@
                 type="Clostech\Integration\Model\ProductList"/>
     <preference for="Clostech\Integration\Api\Data\ProductsResponseInterface"
                 type="Clostech\Integration\Model\Data\ProductsResponse"/>
+    <preference for="Clostech\Integration\Api\Data\ProductInterface"
+                type="Clostech\Integration\Model\Data\Product"/>
+    <preference for="Clostech\Integration\Api\Data\VariantInterface"
+                type="Clostech\Integration\Model\Data\Variant"/>
 </config>

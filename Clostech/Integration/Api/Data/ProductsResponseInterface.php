@@ -26,7 +26,7 @@ interface ProductsResponseInterface
     public function getTotalCount(): int;
 
     /**
-     * @return array[]
+     * @return \Clostech\Integration\Api\Data\ProductInterface[]
      */
     public function getProducts(): array;
 
@@ -60,7 +60,7 @@ interface ProductsResponseInterface
     public function setTotalCount(int $totalCount): self;
 
     /**
-     * @param array $products
+     * @param \Clostech\Integration\Api\Data\ProductInterface[] $products
      * @return $this
      */
     public function setProducts(array $products): self;
