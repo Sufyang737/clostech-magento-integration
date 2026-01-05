@@ -26,7 +26,7 @@ interface ProductsResponseInterface
     public function getTotalCount(): int;
 
     /**
-     * @return array
+     * @return array[]
      */
     public function getProducts(): array;
 
