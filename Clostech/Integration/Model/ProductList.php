@@ -65,7 +65,7 @@ class ProductList implements ProductListInterface
             ];
 
             $dataObject = new DataObject($response);
-            return $dataObject->__toArray();
+            return $dataObject->toArray();
 
         } catch (\Exception $e) {
             $this->logger->error('Clostech Products Endpoint Error: ' . $e->getMessage(), [
@@ -82,7 +82,7 @@ class ProductList implements ProductListInterface
             ];
 
             $dataObject = new DataObject($errorResponse);
-            return $dataObject->__toArray();
+            return $dataObject->toArray();
         }
     }
 
