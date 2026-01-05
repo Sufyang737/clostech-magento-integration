@@ -7,6 +7,7 @@ use Clostech\Integration\Api\ProductListInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\DataObject;
 use Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable;
 use Psr\Log\LoggerInterface;
 
@@ -32,10 +33,9 @@ class ProductList implements ProductListInterface
         $this->logger = $logger;
     }
 
-    public function getList(?int $page = 1, ?int $pageSize = 50): array
+    public function getList(?int $page = 1, ?int $pageSize = 50)
     {
         try {
-            
             $page = max(1, $page ?? 1);
             $pageSize = min(100, max(1, $pageSize ?? 50));
 
@@ -65,7 +65,7 @@ class ProductList implements ProductListInterface
                 'products' => $products
             ];
 
-            return json_decode(json_encode($response), true);
+            return new DataObject($response);
 
         } catch (\Exception $e) {
             $this->logger->error('Clostech Products Endpoint Error: ' . $e->getMessage(), [
@@ -81,10 +81,9 @@ class ProductList implements ProductListInterface
                 'products' => []
             ];
 
-            return json_decode(json_encode($errorResponse), true);
+            return new DataObject($errorResponse);
         }
     }
-
 
     private function buildProductData($product): array
     {

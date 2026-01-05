@@ -10,7 +10,7 @@ interface ProductListInterface
      *
      * @param int|null
      * @param int|null
-     * @return array
+     * @return mixed
      */
-    public function getList(?int $page = 1, ?int $pageSize = 50): array;
+    public function getList(?int $page = 1, ?int $pageSize = 50);
 }
