@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace Clostech\Integration\Api;
 
+use Clostech\Integration\Api\Data\ProductsResponseInterface;
+
 interface ProductListInterface
 {
     /**
@@ -10,7 +12,7 @@ interface ProductListInterface
      *
      * @param int|null $page
      * @param int|null $pageSize
-     * @return string JSON response
+     * @return \Clostech\Integration\Api\Data\ProductsResponseInterface
      */
-    public function getList(?int $page = 1, ?int $pageSize = 50): string;
+    public function getList(?int $page = 1, ?int $pageSize = 50): ProductsResponseInterface;
 }

@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace Clostech\Integration\Model;
 
 use Clostech\Integration\Api\ProductListInterface;
+use Clostech\Integration\Api\Data\ProductsResponseInterface;
+use Clostech\Integration\Api\Data\ProductsResponseInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
@@ -17,22 +19,25 @@ class ProductList implements ProductListInterface
     private SearchCriteriaBuilder $searchCriteriaBuilder;
     private Configurable $configurableType;
     private LoggerInterface $logger;
+    private ProductsResponseInterfaceFactory $responseFactory;
 
     public function __construct(
         ProductRepositoryInterface $productRepository,
         CategoryRepositoryInterface $categoryRepository,
         SearchCriteriaBuilder $searchCriteriaBuilder,
         Configurable $configurableType,
-        LoggerInterface $logger
+        LoggerInterface $logger,
+        ProductsResponseInterfaceFactory $responseFactory
     ) {
         $this->productRepository = $productRepository;
         $this->categoryRepository = $categoryRepository;
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->configurableType = $configurableType;
         $this->logger = $logger;
+        $this->responseFactory = $responseFactory;
     }
 
-    public function getList(?int $page = 1, ?int $pageSize = 50): string
+    public function getList(?int $page = 1, ?int $pageSize = 50): ProductsResponseInterface
     {
         try {
             $page = max(1, $page ?? 1);
@@ -55,31 +60,29 @@ class ProductList implements ProductListInterface
                 $products[] = $productData;
             }
 
-            $response = [
-                'success' => true,
-                'page' => $page,
-                'page_size' => $pageSize,
-                'total_count' => $searchResults->getTotalCount(),
-                'products' => $products
-            ];
+            $response = $this->responseFactory->create();
+            $response->setSuccess(true);
+            $response->setPage($page);
+            $response->setPageSize($pageSize);
+            $response->setTotalCount($searchResults->getTotalCount());
+            $response->setProducts($products);
 
-            return json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            return $response;
 
         } catch (\Exception $e) {
             $this->logger->error('Clostech Products Endpoint Error: ' . $e->getMessage(), [
                 'exception' => $e
             ]);
 
-            $errorResponse = [
-                'success' => false,
-                'error' => 'An error occurred while fetching products',
-                'page' => $page ?? 1,
-                'page_size' => $pageSize ?? 50,
-                'total_count' => 0,
-                'products' => []
-            ];
+            $errorResponse = $this->responseFactory->create();
+            $errorResponse->setSuccess(false);
+            $errorResponse->setPage($page ?? 1);
+            $errorResponse->setPageSize($pageSize ?? 50);
+            $errorResponse->setTotalCount(0);
+            $errorResponse->setProducts([]);
+            $errorResponse->setError('An error occurred while fetching products');
 
-            return json_encode($errorResponse, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            return $errorResponse;
         }
     }
 
