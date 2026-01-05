@@ -6,11 +6,11 @@ namespace Clostech\Integration\Api;
 interface ProductListInterface
 {
     /**
-     * Get paginated list of products for Clostech integration
      *
-     * @param int $page
-     * @param int $pageSize
+     *
+     * @param int|null
+     * @param int|null
      * @return array
      */
-    public function getList(int $page = 1, int $pageSize = 50): array;
+    public function getList(?int $page = 1, ?int $pageSize = 50): array;
 }
