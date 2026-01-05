@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace Clostech\Integration\Model;
 
+use Clostech\Integration\Model\Data\ProductsResponse;
 use Clostech\Integration\Api\ProductListInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
-use Magento\Framework\DataObject;
 use Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable;
 use Psr\Log\LoggerInterface;
 
@@ -33,7 +33,7 @@ class ProductList implements ProductListInterface
         $this->logger = $logger;
     }
 
-    public function getList(?int $page = 1, ?int $pageSize = 50): array
+    public function getList(?int $page = 1, ?int $pageSize = 50): ProductsResponse
     {
         try {
             $page = max(1, $page ?? 1);
@@ -56,33 +56,27 @@ class ProductList implements ProductListInterface
                 $products[] = $productData;
             }
 
-            $response = [
-                'success' => true,
-                'page' => $page,
-                'page_size' => $pageSize,
-                'total_count' => $searchResults->getTotalCount(),
-                'products' => $products
-            ];
-
-            $dataObject = new DataObject($response);
-            return $dataObject->toArray();
+            return new ProductsResponse(
+                success: true,
+                page: $page,
+                pageSize: $pageSize,
+                totalCount: $searchResults->getTotalCount(),
+                products: $products
+            );
 
         } catch (\Exception $e) {
             $this->logger->error('Clostech Products Endpoint Error: ' . $e->getMessage(), [
                 'exception' => $e
             ]);
-            
-            $errorResponse = [
-                'success' => false,
-                'error' => 'An error occurred while fetching products',
-                'page' => $page ?? 1,
-                'page_size' => $pageSize ?? 50,
-                'total_count' => 0,
-                'products' => []
-            ];
 
-            $dataObject = new DataObject($errorResponse);
-            return $dataObject->toArray();
+            return new ProductsResponse(
+                success: false,
+                page: $page ?? 1,
+                pageSize: $pageSize ?? 50,
+                totalCount: 0,
+                products: [],
+                error: 'An error occurred while fetching products'
+            );
         }
     }
 
