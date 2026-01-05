@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace Clostech\Integration\Model;
 
-use Clostech\Integration\Model\Data\ProductsResponse;
 use Clostech\Integration\Api\ProductListInterface;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
@@ -33,7 +32,7 @@ class ProductList implements ProductListInterface
         $this->logger = $logger;
     }
 
-    public function getList(?int $page = 1, ?int $pageSize = 50): ProductsResponse
+    public function getList(?int $page = 1, ?int $pageSize = 50): string
     {
         try {
             $page = max(1, $page ?? 1);
@@ -56,27 +55,31 @@ class ProductList implements ProductListInterface
                 $products[] = $productData;
             }
 
-            return new ProductsResponse(
-                success: true,
-                page: $page,
-                pageSize: $pageSize,
-                totalCount: $searchResults->getTotalCount(),
-                products: $products
-            );
+            $response = [
+                'success' => true,
+                'page' => $page,
+                'page_size' => $pageSize,
+                'total_count' => $searchResults->getTotalCount(),
+                'products' => $products
+            ];
+
+            return json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
 
         } catch (\Exception $e) {
             $this->logger->error('Clostech Products Endpoint Error: ' . $e->getMessage(), [
                 'exception' => $e
             ]);
 
-            return new ProductsResponse(
-                success: false,
-                page: $page ?? 1,
-                pageSize: $pageSize ?? 50,
-                totalCount: 0,
-                products: [],
-                error: 'An error occurred while fetching products'
-            );
+            $errorResponse = [
+                'success' => false,
+                'error' => 'An error occurred while fetching products',
+                'page' => $page ?? 1,
+                'page_size' => $pageSize ?? 50,
+                'total_count' => 0,
+                'products' => []
+            ];
+
+            return json_encode($errorResponse, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
         }
     }
 
