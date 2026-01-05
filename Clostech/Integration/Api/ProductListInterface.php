@@ -8,9 +8,9 @@ interface ProductListInterface
     /**
      *
      *
-     * @param int|null $page Page number (default: 1)
-     * @param int|null $pageSize Items per page (default: 50)
-     * @return string JSON encoded response
+     * @param int|null
+     * @param int|null
+     * @return array
      */
-    public function getList(?int $page = 1, ?int $pageSize = 50): string;
+    public function getList(?int $page = 1, ?int $pageSize = 50): array;
 }

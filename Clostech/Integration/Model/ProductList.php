@@ -32,7 +32,7 @@ class ProductList implements ProductListInterface
         $this->logger = $logger;
     }
 
-    public function getList(?int $page = 1, ?int $pageSize = 50): string
+    public function getList(?int $page = 1, ?int $pageSize = 50): array
     {
         try {
             
@@ -48,7 +48,7 @@ class ProductList implements ProductListInterface
             $products = [];
 
             foreach ($searchResults->getItems() as $product) {
-                // Solo procesamos productos padre
+
                 if ($this->isChildProduct($product)) {
                     continue;
                 }
@@ -65,7 +65,7 @@ class ProductList implements ProductListInterface
                 'products' => $products
             ];
 
-            return json_encode($response, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            return json_decode(json_encode($response), true);
 
         } catch (\Exception $e) {
             $this->logger->error('Clostech Products Endpoint Error: ' . $e->getMessage(), [
@@ -81,9 +81,10 @@ class ProductList implements ProductListInterface
                 'products' => []
             ];
 
-            return json_encode($errorResponse, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+            return json_decode(json_encode($errorResponse), true);
         }
     }
+
 
     private function buildProductData($product): array
     {
