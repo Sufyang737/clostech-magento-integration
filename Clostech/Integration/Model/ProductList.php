@@ -33,7 +33,7 @@ class ProductList implements ProductListInterface
         $this->logger = $logger;
     }
 
-    public function getList(?int $page = 1, ?int $pageSize = 50)
+    public function getList(?int $page = 1, ?int $pageSize = 50): \Magento\Framework\DataObject
     {
         try {
             $page = max(1, $page ?? 1);
