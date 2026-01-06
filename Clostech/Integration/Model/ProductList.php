@@ -4,8 +4,6 @@ declare(strict_types=1);
 namespace Clostech\Integration\Model;
 
 use Clostech\Integration\Api\ProductListInterface;
-use Clostech\Integration\Api\Data\ProductsResponseInterface;
-use Clostech\Integration\Api\Data\ProductsResponseInterfaceFactory;
 use Clostech\Integration\Api\Data\ProductInterfaceFactory;
 use Clostech\Integration\Api\Data\VariantInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
@@ -21,7 +19,6 @@ class ProductList implements ProductListInterface
     private SearchCriteriaBuilder $searchCriteriaBuilder;
     private Configurable $configurableType;
     private LoggerInterface $logger;
-    private ProductsResponseInterfaceFactory $responseFactory;
     private ProductInterfaceFactory $productFactory;
     private VariantInterfaceFactory $variantFactory;
 
@@ -31,7 +28,6 @@ class ProductList implements ProductListInterface
         SearchCriteriaBuilder $searchCriteriaBuilder,
         Configurable $configurableType,
         LoggerInterface $logger,
-        ProductsResponseInterfaceFactory $responseFactory,
         ProductInterfaceFactory $productFactory,
         VariantInterfaceFactory $variantFactory
     ) {
@@ -40,22 +36,14 @@ class ProductList implements ProductListInterface
         $this->searchCriteriaBuilder = $searchCriteriaBuilder;
         $this->configurableType = $configurableType;
         $this->logger = $logger;
-        $this->responseFactory = $responseFactory;
         $this->productFactory = $productFactory;
         $this->variantFactory = $variantFactory;
     }
 
-    public function getList(?int $page = 1, ?int $pageSize = 50): ProductsResponseInterface
+    public function getList(): array
     {
         try {
-            $page = max(1, $page ?? 1);
-            $pageSize = min(100, max(1, $pageSize ?? 50));
-
-            $searchCriteria = $this->searchCriteriaBuilder
-                ->setPageSize($pageSize)
-                ->setCurrentPage($page)
-                ->create();
-
+            $searchCriteria = $this->searchCriteriaBuilder->create();
             $searchResults = $this->productRepository->getList($searchCriteria);
             $products = [];
 
@@ -68,29 +56,14 @@ class ProductList implements ProductListInterface
                 $products[] = $productData;
             }
 
-            $response = $this->responseFactory->create();
-            $response->setSuccess(true);
-            $response->setPage($page);
-            $response->setPageSize($pageSize);
-            $response->setTotalCount($searchResults->getTotalCount());
-            $response->setProducts($products);
-
-            return $response;
+            return $products;
 
         } catch (\Exception $e) {
             $this->logger->error('Clostech Products Endpoint Error: ' . $e->getMessage(), [
                 'exception' => $e
             ]);
 
-            $errorResponse = $this->responseFactory->create();
-            $errorResponse->setSuccess(false);
-            $errorResponse->setPage($page ?? 1);
-            $errorResponse->setPageSize($pageSize ?? 50);
-            $errorResponse->setTotalCount(0);
-            $errorResponse->setProducts([]);
-            $errorResponse->setError('An error occurred while fetching products');
-
-            return $errorResponse;
+            return [];
         }
     }
 

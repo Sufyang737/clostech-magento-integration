@@ -3,16 +3,14 @@ declare(strict_types=1);
 
 namespace Clostech\Integration\Api;
 
-use Clostech\Integration\Api\Data\ProductsResponseInterface;
+use Clostech\Integration\Api\Data\ProductInterface;
 
 interface ProductListInterface
 {
     /**
-     * Get paginated list of products with parent-variant relationships
+     * Get all products with parent-variant relationships
      *
-     * @param int|null $page
-     * @param int|null $pageSize
-     * @return \Clostech\Integration\Api\Data\ProductsResponseInterface
+     * @return \Clostech\Integration\Api\Data\ProductInterface[]
      */
-    public function getList(?int $page = 1, ?int $pageSize = 50): ProductsResponseInterface;
+    public function getList(): array;
 }
