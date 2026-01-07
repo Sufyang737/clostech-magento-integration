@@ -1,0 +1,62 @@
+<?php
+/**
+ * @var $block \Clostech\Integration\Block\TryOnButton
+ */
+$product = $block->getCurrentProduct();
+
+// Si no hay producto, no mostrar nada
+if (!$product) {
+    return;
+}
+?>
+
+<div class="clostech-tryon-wrapper">
+    <button id="clostech-tryon-btn" 
+            class="action primary clostech-tryon-button"
+            type="button"
+            data-product-id="<?= $block->escapeHtmlAttr($block->getCurrentProductId()) ?>"
+            data-product-sku="<?= $block->escapeHtmlAttr($block->getCurrentProductSku()) ?>"
+            data-product-name="<?= $block->escapeHtmlAttr($block->getCurrentProductName()) ?>">
+        <span><?= __('Virtual Try-On') ?></span>
+    </button>
+</div>
+
+<!-- Modal del Try-On -->
+<div id="clostech-tryon-modal" class="clostech-modal" style="display: none;">
+    <div class="clostech-modal-content">
+        <span class="clostech-modal-close">&times;</span>
+        <h2><?= __('Virtual Try-On') ?></h2>
+        <p><?= __('Upload your photo to try on: ') ?><strong id="modal-product-name"></strong></p>
+        
+        <div class="clostech-upload-area">
+            <input type="file" id="clostech-photo-upload" accept="image/*">
+            <label for="clostech-photo-upload" class="upload-label">
+                <?= __('Choose Photo') ?>
+            </label>
+        </div>
+        
+        <div id="clostech-preview" style="display: none;">
+            <h3><?= __('Preview') ?></h3>
+            <img id="clostech-preview-image" src="" alt="Preview">
+        </div>
+        
+        <div class="clostech-modal-actions">
+            <button id="clostech-submit-btn" class="action primary" disabled>
+                <?= __('Try On') ?>
+            </button>
+        </div>
+        
+        <div id="clostech-result" style="display: none;">
+            <h3><?= __('Result') ?></h3>
+            <p><?= __('This is where the AI result will be shown.') ?></p>
+        </div>
+    </div>
+</div>
+
+<script type="text/x-magento-init">
+{
+    "#clostech-tryon-btn": {
+        "Clostech_Integration/js/tryon": {}
+    }
+}
+</script>
