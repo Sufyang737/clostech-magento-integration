@@ -7,4 +7,6 @@
                 type="Clostech\Integration\Model\Data\Product"/>
     <preference for="Clostech\Integration\Api\Data\VariantInterface"
                 type="Clostech\Integration\Model\Data\Variant"/>
+    <preference for="Clostech\Integration\Api\StoreValidationInterface" 
+                type="Clostech\Integration\Model\StoreValidation"/>
 </config>
