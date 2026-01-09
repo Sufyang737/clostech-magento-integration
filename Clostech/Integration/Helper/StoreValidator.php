@@ -21,9 +21,9 @@ class StoreValidator extends AbstractHelper
         $this->scopeConfig = $scopeConfig;
     }
     
-    /**
-     * Valida que la tienda Magento sea válida
-     */
+    
+    //Valida que la tienda Magento sea válida
+    
     public function validateStore(string $domain): bool
     {
         try {
@@ -40,19 +40,21 @@ class StoreValidator extends AbstractHelper
         }
     }
     
-    /**
-     * Extrae información del cliente desde Magento
-     */
+    
+    // Extrae información del cliente desde Magento
+     
     public function getStoreInformation(): array
     {
         try {
+            $store = $this->storeManager->getStore();
+            
             return [
                 'name' => $this->scopeConfig->getValue(
                     'general/store_information/name',
                     \Magento\Store\Model\ScopeInterface::SCOPE_STORE
-                ),
-                'domain' => $this->storeManager->getStore()->getBaseUrl(),
-                'secure_url' => $this->storeManager->getStore()->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_WEB, true),
+                ) ?: $store->getName(),
+                'domain' => $store->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_WEB, false),
+                'secure_url' => $store->getBaseUrl(\Magento\Framework\UrlInterface::URL_TYPE_WEB, true),
                 'phone' => $this->scopeConfig->getValue(
                     'general/store_information/phone',
                     \Magento\Store\Model\ScopeInterface::SCOPE_STORE
@@ -61,7 +63,12 @@ class StoreValidator extends AbstractHelper
                     'trans_email/ident_general/email',
                     \Magento\Store\Model\ScopeInterface::SCOPE_STORE
                 ),
-                // Redes sociales (si están configuradas)
+                'country' => $this->scopeConfig->getValue(
+                    'general/country/default',
+                    \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+                ) ?: 'US',
+                'currency' => $store->getCurrentCurrencyCode() ?: 'USD',
+                'shop' => $store->getName(),
                 'social' => $this->getSocialNetworks()
             ];
         } catch (\Exception $e) {
@@ -70,9 +77,9 @@ class StoreValidator extends AbstractHelper
         }
     }
     
-    /**
-     * Genera un storeId único
-     */
+    
+    // Genera un storeId único
+    
     public function generateStoreId(): string
     {
         // Generar número aleatorio grande
@@ -82,9 +89,8 @@ class StoreValidator extends AbstractHelper
         return (string)$randomNumber;
     }
     
-    /**
-     * Limpia URL para comparación
-     */
+    
+    //Limpia URL para comparación
     private function cleanUrl(string $url): string
     {
         // Remover protocolo
@@ -99,9 +105,9 @@ class StoreValidator extends AbstractHelper
         return strtolower($url);
     }
     
-    /**
-     * Obtiene redes sociales configuradas
-     */
+    
+    // Obtiene redes sociales configuradas
+
     private function getSocialNetworks(): array
     {
         // Magento no tiene campos por defecto para redes sociales
@@ -111,6 +117,23 @@ class StoreValidator extends AbstractHelper
             'facebook' => '',
             'instagram' => '',
             'twitter' => ''
+        ];
+    }
+
+
+    // Transforma los datos al formato que espera Clostech
+ 
+    public function formatDataForClostech(string $storeId, array $storeInfo): array
+    {
+        return [
+            'storeid' => $storeId,
+            'email' => $storeInfo['email'] ?? '',
+            'domain' => $storeInfo['domain'] ?? '',
+            'shop' => $storeInfo['shop'] ?? $storeInfo['name'] ?? '',
+            'name' => $storeInfo['name'] ?? '',
+            'country' => $storeInfo['country'] ?? 'US',
+            'currency' => $storeInfo['currency'] ?? 'USD',
+            'app_url' => $storeInfo['secure_url'] ?? $storeInfo['domain'] ?? ''
         ];
     }
 }
