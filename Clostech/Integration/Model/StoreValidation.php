@@ -99,6 +99,11 @@ class StoreValidation implements StoreValidationInterface
         try {
             // Obtener URL de Clostech desde configuración
             // Por ahora usamos placeholder, después lo configuraremos
+            $this->logger->info('📦 DATOS QUE SE ENVÍAN A CLOSTECH:', [
+            'data' => $data,
+            'json' => json_encode($data)
+            ]);
+
             $clostechUrl = $this->getClostechUrl();
             
             if (empty($clostechUrl)) {

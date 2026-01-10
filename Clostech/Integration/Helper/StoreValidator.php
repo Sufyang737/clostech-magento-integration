@@ -137,3 +137,5 @@ class StoreValidator extends AbstractHelper
         ];
     }
 }
+
+// { "storeid", "email", "domain", "shop", "name", "country", "currency", "app_url" }
