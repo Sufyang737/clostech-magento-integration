@@ -159,6 +159,6 @@ class StoreValidation implements StoreValidationInterface
         // URL de Clostech
         // En desarrollo: usar ngrok URL
         // En producción: cambiar a URL real de Clostech
-        return 'http://placeholder-clostech-url.com';
+        return 'https://identic-keenan-nonvalorous.ngrok-free.dev';
     }
 }
