@@ -15,20 +15,23 @@ define([
         const $result = $('#clostech-result');
         const $modalProductName = $('#modal-product-name');
 
+        // URL de la API de Clostech
+        const CLOSTECH_API_URL = 'https://identic-keenan-nonvalorous.ngrok-free.dev';
+
         // Obtener datos del producto desde el botón
         const productId = $button.data('product-id');
         const productSku = $button.data('product-sku');
         const productName = $button.data('product-name');
+        const storeId = $button.data('store-id');
+        const productImageUrl = $button.data('product-image');
+
+        // Variable para guardar el archivo de la foto del usuario
+        let userPhotoFile = null;
 
         // Click en el botón "Virtual Try-On"
         $button.on('click', function () {
-            // Mostrar nombre del producto en el modal
             $modalProductName.text(productName);
-            
-            // Abrir modal
             $modal.show();
-            
-            // Reset del modal
             resetModal();
         });
 
@@ -49,48 +52,178 @@ define([
             const file = event.target.files[0];
             
             if (file && file.type.startsWith('image/')) {
-                const reader = new FileReader();
+                userPhotoFile = file;
                 
+                const reader = new FileReader();
                 reader.onload = function (e) {
-                    // Mostrar preview de la imagen
                     $previewImage.attr('src', e.target.result);
                     $preview.show();
-                    
-                    // Habilitar botón "Try On"
                     $submitBtn.prop('disabled', false);
                 };
-                
                 reader.readAsDataURL(file);
             }
         });
 
         // Click en "Try On"
         $submitBtn.on('click', function () {
-            console.log('Try On clicked!');
-            console.log('Product ID:', productId);
-            console.log('Product SKU:', productSku);
-            console.log('Product Name:', productName);
-            
-            // Aquí irá la llamada a la API de Clostech
-            // Por ahora, solo mostrar mensaje
+            console.log(' Starting Try-On process...');
+            $submitBtn.prop('disabled', true);
             $result.show();
-            $result.html('<p>Processing... (API integration coming soon)</p>');
-            
-            // Simular procesamiento
-            setTimeout(function() {
-                $result.html(
-                    '<h3>Result</h3>' +
-                    '<p>Your photo with the product would appear here.</p>' +
-                    '<p>API integration pending.</p>'
-                );
-            }, 1000);
+            $result.html('<p> Processing with AI... Please wait.</p>');
+
+            processTryOn();
         });
+
+        /**
+         * Proceso completo de Try-On
+         */
+        async function processTryOn() {
+            try {
+                // PASO 1: Obtener API Key
+                console.log(' Step 1: Getting API Key...');
+                const apiKey = await getApiKey(storeId);
+                console.log(' API Key obtained');
+
+                // PASO 2: Subir foto del usuario
+                console.log(' Step 2: Uploading user photo...');
+                const userImageUrl = await uploadUserPhoto(userPhotoFile);
+                console.log(' User photo uploaded:', userImageUrl);
+
+                // PASO 3: Procesar con IA
+                console.log(' Step 3: Processing with AI...');
+                const resultImageUrl = await processWithAI({
+                    api_key: apiKey,
+                    store_id: storeId,
+                    product_id: productId,
+                    variant_id: null, // TODO: Implementar variantes después
+                    variant_values: null,
+                    user_image_url: userImageUrl,
+                    cloth_image_url: productImageUrl
+                });
+                console.log(' AI processing complete:', resultImageUrl);
+
+                // Mostrar resultado
+                $result.html(
+                    '<h3> Result</h3>' +
+                    '<img src="' + resultImageUrl + '" alt="Try-on result" style="max-width: 100%; height: auto; border-radius: 8px;">' +
+                    '<p style="color: green;">Try-on completed successfully!</p>'
+                );
+
+                // Guardar en localStorage
+                saveClosetchUsage(productId, productName, productSku, resultImageUrl);
+                console.log(' Try-on saved to localStorage');
+
+            } catch (error) {
+                console.error(' Error in Try-On process:', error);
+                $result.html(
+                    '<h3> Error</h3>' +
+                    '<p style="color: red;">' + error.message + '</p>' +
+                    '<button onclick="location.reload()">Try Again</button>'
+                );
+            } finally {
+                $submitBtn.prop('disabled', false);
+            }
+        }
+
+        /**
+         * PASO 1: Obtener API Key de Clostech
+         */
+        function getApiKey(storeId) {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: CLOSTECH_API_URL + '/api/apikeys/store',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify({ store_id: storeId }),
+                    success: function(response) {
+                        if (response && response.api_key) {
+                            resolve(response.api_key);
+                        } else {
+                            reject(new Error('No API key returned'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        reject(new Error('Failed to get API key: ' + error));
+                    }
+                });
+            });
+        }
+
+        /**
+         * PASO 2: Subir foto del usuario
+         */
+        function uploadUserPhoto(file) {
+            return new Promise((resolve, reject) => {
+                const formData = new FormData();
+                formData.append('file', file);
+
+                $.ajax({
+                    url: CLOSTECH_API_URL + '/api/upload-image',
+                    type: 'POST',
+                    data: formData,
+                    processData: false,
+                    contentType: false,
+                    success: function(response) {
+                        if (response && response.user_image_url) {
+                            resolve(response.user_image_url);
+                        } else {
+                            reject(new Error('No image URL returned'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        reject(new Error('Failed to upload image: ' + error));
+                    }
+                });
+            });
+        }
+
+        /**
+         * PASO 3: Procesar con IA
+         */
+        function processWithAI(data) {
+            return new Promise((resolve, reject) => {
+                $.ajax({
+                    url: CLOSTECH_API_URL + '/api/ai-v2',
+                    type: 'POST',
+                    contentType: 'application/json',
+                    data: JSON.stringify(data),
+                    success: function(response) {
+                        if (response && response.result_image_url) {
+                            resolve(response.result_image_url);
+                        } else {
+                            reject(new Error('No result image returned'));
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        reject(new Error('AI processing failed: ' + error));
+                    }
+                });
+            });
+        }
+
+        /**
+         * Guardar que el usuario usó Clostech
+         */
+        function saveClosetchUsage(productId, productName, productSku, imageUrl) {
+            const tryOnData = {
+                productId: productId,
+                productName: productName,
+                productSku: productSku,
+                timestamp: Date.now(),
+                imageUrl: imageUrl,
+                used: true
+            };
+            
+            localStorage.setItem('clostech_tryon_' + productId, JSON.stringify(tryOnData));
+            console.log('Saved to localStorage:', tryOnData);
+        }
 
         function resetModal() {
             $photoUpload.val('');
             $preview.hide();
             $result.hide();
             $submitBtn.prop('disabled', true);
+            userPhotoFile = null;
         }
     };
 });

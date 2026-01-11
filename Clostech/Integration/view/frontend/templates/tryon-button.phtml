@@ -8,6 +8,9 @@ $product = $block->getCurrentProduct();
 if (!$product) {
     return;
 }
+
+$storeId = $block->getStoreId();
+$productImageUrl = $block->getProductImageUrl();
 ?>
 
 <div class="clostech-tryon-wrapper">
@@ -16,7 +19,9 @@ if (!$product) {
             type="button"
             data-product-id="<?= $block->escapeHtmlAttr($block->getCurrentProductId()) ?>"
             data-product-sku="<?= $block->escapeHtmlAttr($block->getCurrentProductSku()) ?>"
-            data-product-name="<?= $block->escapeHtmlAttr($block->getCurrentProductName()) ?>">
+            data-product-name="<?= $block->escapeHtmlAttr($block->getCurrentProductName()) ?>"
+            data-store-id="<?= $block->escapeHtmlAttr($storeId) ?>"
+            data-product-image="<?= $block->escapeHtmlAttr($productImageUrl) ?>">
         <span><?= __('Virtual Try-On') ?></span>
     </button>
 </div>
