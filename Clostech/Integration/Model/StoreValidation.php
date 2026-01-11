@@ -102,3 +102,74 @@ class StoreValidation implements StoreValidationInterface
             ];
         }
     }
+    
+    /**
+     * Envía datos a Clostech
+     */
+    private function sendToClostech(array $data): array
+    {
+        try {
+            $this->logger->info('📦 DATOS QUE SE ENVÍAN A CLOSTECH:', [
+                'data' => $data,
+                'json' => json_encode($data)
+            ]);
+
+            $clostechUrl = $this->getClostechUrl();
+            
+            if (empty($clostechUrl)) {
+                return [
+                    'success' => false,
+                    'message' => 'Clostech URL not configured'
+                ];
+            }
+            
+            $endpoint = $clostechUrl . '/api/shopify/client_information';
+            
+            // Configurar cURL
+            $this->curl->setOption(CURLOPT_RETURNTRANSFER, true);
+            $this->curl->setOption(CURLOPT_TIMEOUT, 30);
+            $this->curl->addHeader('Content-Type', 'application/json');
+            
+            // Hacer POST
+            $this->curl->post($endpoint, json_encode($data));
+            
+            $response = $this->curl->getBody();
+            $statusCode = $this->curl->getStatus();
+            
+            $this->logger->info('Clostech API response', [
+                'status' => $statusCode,
+                'response' => $response
+            ]);
+            
+            if ($statusCode >= 200 && $statusCode < 300) {
+                return [
+                    'success' => true,
+                    'message' => 'Data synced successfully',
+                    'response' => $response
+                ];
+            }
+            
+            return [
+                'success' => false,
+                'message' => 'Clostech API returned status ' . $statusCode,
+                'response' => $response
+            ];
+            
+        } catch (\Exception $e) {
+            $this->logger->error('Error sending to Clostech: ' . $e->getMessage());
+            
+            return [
+                'success' => false,
+                'message' => $e->getMessage()
+            ];
+        }
+    }
+    
+    /**
+     * Obtiene URL de Clostech
+     */
+    private function getClostechUrl(): string
+    {
+        return 'https://identic-keenan-nonvalorous.ngrok-free.dev';
+    }
+}
