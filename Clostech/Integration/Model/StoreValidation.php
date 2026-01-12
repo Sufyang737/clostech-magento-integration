@@ -109,7 +109,7 @@ class StoreValidation implements StoreValidationInterface
     private function sendToClostech(array $data): array
     {
         try {
-            $this->logger->info('📦 DATOS QUE SE ENVÍAN A CLOSTECH:', [
+            $this->logger->info('DATOS QUE SE ENVÍAN A CLOSTECH:', [
                 'data' => $data,
                 'json' => json_encode($data)
             ]);
@@ -170,6 +170,6 @@ class StoreValidation implements StoreValidationInterface
      */
     private function getClostechUrl(): string
     {
-        return 'https://identic-keenan-nonvalorous.ngrok-free.dev';
+        return 'https://barrier-stockholm-successfully-livecam.trycloudflare.com';
     }
 }

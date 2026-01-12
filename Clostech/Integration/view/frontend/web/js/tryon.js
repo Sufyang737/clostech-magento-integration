@@ -16,7 +16,7 @@ define([
         const $modalProductName = $('#modal-product-name');
 
         // URL de la API de Clostech
-        const CLOSTECH_API_URL = 'https://identic-keenan-nonvalorous.ngrok-free.dev';
+        const CLOSTECH_API_URL = 'https://barrier-stockholm-successfully-livecam.trycloudflare.com';
 
         // Obtener datos del producto desde el botón
         const productId = $button.data('product-id');
@@ -215,15 +215,11 @@ define([
             };
             
             localStorage.setItem('clostech_tryon_' + productId, JSON.stringify(tryOnData));
+            
+            // Marcar que el usuario usó Clostech (para el checkout)
+            localStorage.setItem('use_clostech', 'true');
+            
             console.log('Saved to localStorage:', tryOnData);
-        }
-
-        function resetModal() {
-            $photoUpload.val('');
-            $preview.hide();
-            $result.hide();
-            $submitBtn.prop('disabled', true);
-            userPhotoFile = null;
         }
     };
 });
