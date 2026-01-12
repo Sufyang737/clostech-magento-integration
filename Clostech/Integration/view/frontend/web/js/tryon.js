@@ -16,7 +16,7 @@ define([
         const $modalProductName = $('#modal-product-name');
 
         // URL de la API de Clostech
-        const CLOSTECH_API_URL = 'https://barrier-stockholm-successfully-livecam.trycloudflare.com';
+        const CLOSTECH_API_URL = 'https://identic-keenan-nonvalorous.ngrok-free.dev';
 
         // Obtener datos del producto desde el botón
         const productId = $button.data('product-id');
@@ -79,23 +79,23 @@ define([
          */
         async function processTryOn() {
             try {
-                // PASO 1: Obtener API Key
-                console.log(' Step 1: Getting API Key...');
+                // Obtener API Key
+                console.log('Getting API Key...');
                 const apiKey = await getApiKey(storeId);
                 console.log(' API Key obtained');
 
-                // PASO 2: Subir foto del usuario
-                console.log(' Step 2: Uploading user photo...');
+                // Subir foto del usuario
+                console.log('Uploading user photo...');
                 const userImageUrl = await uploadUserPhoto(userPhotoFile);
                 console.log(' User photo uploaded:', userImageUrl);
 
-                // PASO 3: Procesar con IA
-                console.log(' Step 3: Processing with AI...');
+                // Procesar con IA
+                console.log(' Processing with AI...');
                 const resultImageUrl = await processWithAI({
                     api_key: apiKey,
                     store_id: storeId,
                     product_id: productId,
-                    variant_id: null, // TODO: Implementar variantes después
+                    variant_id: null,
                     variant_values: null,
                     user_image_url: userImageUrl,
                     cloth_image_url: productImageUrl

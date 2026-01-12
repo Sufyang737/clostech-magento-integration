@@ -170,6 +170,6 @@ class StoreValidation implements StoreValidationInterface
      */
     private function getClostechUrl(): string
     {
-        return 'https://barrier-stockholm-successfully-livecam.trycloudflare.com';
+        return 'https://identic-keenan-nonvalorous.ngrok-free.dev'
     }
 }
