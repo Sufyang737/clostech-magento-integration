@@ -75,6 +75,41 @@ class StoreValidation implements StoreValidationInterface
                 $this->logger->error('Failed to sync with Clostech', [
                     'error' => $clostechResponse['message']
                 ]);
+                
+                return [
+                    'success' => true,
+                    'message' => 'Store validated but sync failed',
+                    'storeId' => $storeId,
+                    'storeInfo' => $storeInfo,
+                    'clostech_sync' => false
+                ];
+            }
+            
+            // Obtener API key y client_id de Clostech
+            $credentials = $this->getApiCredentials($storeId);
+            
+            if ($credentials['success']) {
+                // Guardar API key y client_id en configuración
+                $this->configWriter->save(
+                    'clostech/integration/api_key',
+                    $credentials['api_key'],
+                    \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+                    0
+                );
+                
+                $this->configWriter->save(
+                    'clostech/integration/client_id',
+                    $credentials['client_id'],
+                    \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+                    0
+                );
+                
+                $this->logger->info('API credentials saved', [
+                    'api_key' => substr($credentials['api_key'], 0, 10) . '...',
+                    'client_id' => $credentials['client_id']
+                ]);
+            } else {
+                $this->logger->warning('Could not retrieve API credentials from Clostech');
             }
             
             $this->logger->info('Store validated successfully', [
@@ -109,7 +144,7 @@ class StoreValidation implements StoreValidationInterface
     private function sendToClostech(array $data): array
     {
         try {
-            $this->logger->info('DATOS QUE SE ENVÍAN A CLOSTECH:', [
+            $this->logger->info('📦 DATOS QUE SE ENVÍAN A CLOSTECH:', [
                 'data' => $data,
                 'json' => json_encode($data)
             ]);
@@ -162,6 +197,56 @@ class StoreValidation implements StoreValidationInterface
                 'success' => false,
                 'message' => $e->getMessage()
             ];
+        }
+    }
+    
+    /**
+     * Obtiene API key y client_id de Clostech
+     */
+    private function getApiCredentials(string $storeId): array
+    {
+        try {
+            $clostechUrl = $this->getClostechUrl();
+            $endpoint = $clostechUrl . '/api/apikeys/store';
+            
+            $this->logger->info('🔑 Requesting API credentials from Clostech', [
+                'endpoint' => $endpoint,
+                'store_id' => $storeId
+            ]);
+            
+            // Configurar cURL
+            $this->curl->setOption(CURLOPT_RETURNTRANSFER, true);
+            $this->curl->setOption(CURLOPT_TIMEOUT, 30);
+            $this->curl->addHeader('Content-Type', 'application/json');
+            
+            // Hacer POST
+            $this->curl->post($endpoint, json_encode(['store_id' => $storeId]));
+            
+            $response = $this->curl->getBody();
+            $statusCode = $this->curl->getStatus();
+            
+            $this->logger->info('API credentials response', [
+                'status' => $statusCode,
+                'response' => $response
+            ]);
+            
+            if ($statusCode >= 200 && $statusCode < 300) {
+                $data = json_decode($response, true);
+                
+                if (isset($data['data']['api_key']) && isset($data['data']['client']['id'])) {
+                    return [
+                        'success' => true,
+                        'api_key' => $data['data']['api_key'],
+                        'client_id' => $data['data']['client']['id']
+                    ];
+                }
+            }
+            
+            return ['success' => false];
+            
+        } catch (\Exception $e) {
+            $this->logger->error('Error getting API credentials: ' . $e->getMessage());
+            return ['success' => false];
         }
     }
     
