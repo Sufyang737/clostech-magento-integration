@@ -35,7 +35,7 @@ class StoreValidator extends AbstractHelper
             
             return $cleanBaseUrl === $cleanDomain;
         } catch (\Exception $e) {
-            $this->_logger->error('Error validating store: ' . $e->getMessage());
+            $this->_logger->error('Error al validar la tienda: ' . $e->getMessage());
             return false;
         }
     }
@@ -72,41 +72,41 @@ class StoreValidator extends AbstractHelper
                 'social' => $this->getSocialNetworks()
             ];
         } catch (\Exception $e) {
-            $this->_logger->error('Error getting store information: ' . $e->getMessage());
+            $this->_logger->error('Error al extraer la información: ' . $e->getMessage());
             return [];
         }
     }
     
     
-    // Genera un storeId único
+    // genera un storeId unico
     
     public function generateStoreId(): string
     {
-        // Generar número aleatorio grande
+        // genera número aaleatorio
         $randomNumber = random_int(100000000, 999999999);
         
-        // Convertir a string
+        // convierte a string
         return (string)$randomNumber;
     }
     
     
-    //Limpia URL para comparación
+    //limpia URL para comparación
     private function cleanUrl(string $url): string
     {
-        // Remover protocolo
+        // remueve protocolo
         $url = preg_replace('#^https?://#', '', $url);
         
-        // Remover www.
+        // remueve www.
         $url = preg_replace('#^www\.#', '', $url);
         
-        // Remover trailing slash
+        // remueve slash
         $url = rtrim($url, '/');
         
         return strtolower($url);
     }
     
     
-    // Obtiene redes sociales configuradas
+    // obtiene las redes sociales configuradas
 
     private function getSocialNetworks(): array
     {

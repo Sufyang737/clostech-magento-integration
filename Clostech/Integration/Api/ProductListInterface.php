@@ -8,7 +8,7 @@ use Clostech\Integration\Api\Data\ProductInterface;
 interface ProductListInterface
 {
     /**
-     * Get all products with parent-variant relationships
+     * obtiene todos los productos con variante clave-valor
      *
      * @return \Clostech\Integration\Api\Data\ProductInterface[]
      */

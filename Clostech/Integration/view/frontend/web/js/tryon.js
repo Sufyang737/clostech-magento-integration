@@ -136,8 +136,8 @@ define([
                     contentType: 'application/json',
                     data: JSON.stringify({ store_id: storeId }),
                     success: function(response) {
-                        if (response && response.api_key) {
-                            resolve(response.api_key);
+                        if (response && response.data.api_key) {
+                            resolve(response.data.api_key);
                         } else {
                             reject(new Error('No API key returned'));
                         }

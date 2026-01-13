@@ -49,9 +49,8 @@ class TryOnButton extends Template
         return $product ? $product->getName() : null;
     }
     
-    /**
-     * Obtiene el storeId de Clostech desde la configuración
-     */
+     // Obtiene el storeId de Clostech desde la configuración de la tienda
+
     public function getStoreId(): ?string
     {
         return $this->scopeConfig->getValue(
@@ -60,9 +59,9 @@ class TryOnButton extends Template
         );
     }
     
-    /**
-     * Obtiene la URL de la imagen principal del producto
-     */
+    
+    //Obtiene la URL de la imagen del producto
+
     public function getProductImageUrl(): ?string
     {
         $product = $this->getCurrentProduct();
