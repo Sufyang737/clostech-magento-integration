@@ -51,71 +51,92 @@ class StoreValidation implements StoreValidationInterface
                 ];
             }
             
-            // Generar storeId
-            $storeId = $this->storeValidator->generateStoreId();
-            
-            // Guardar storeId en configuración de Magento
-            $this->configWriter->save(
+            // Verificar si ya existe un storeId
+            $existingStoreId = $this->scopeConfig->getValue(
                 'clostech/integration/store_id',
-                $storeId,
-                \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-                0
+                \Magento\Store\Model\ScopeInterface::SCOPE_STORE
             );
+            
+            if ($existingStoreId) {
+                $this->logger->info('Store already validated, using existing storeId', [
+                    'storeId' => $existingStoreId
+                ]);
+                
+                $storeId = $existingStoreId;
+            } else {
+                // Generar nuevo storeId solo si no existe
+                $storeId = $this->storeValidator->generateStoreId();
+                
+                // Guardar storeId en configuración
+                $this->configWriter->save(
+                    'clostech/integration/store_id',
+                    $storeId,
+                    \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+                    0
+                );
+                
+                $this->logger->info('New storeId generated and saved', [
+                    'storeId' => $storeId
+                ]);
+            }
             
             // Obtener información de la tienda
             $storeInfo = $this->storeValidator->getStoreInformation();
             
-            // Transformar datos al formato de Clostech
-            $clostechData = $this->storeValidator->formatDataForClostech($storeId, $storeInfo);
-            
-            // Enviar datos a Clostech
-            $clostechResponse = $this->sendToClostech($clostechData);
-            
-            if (!$clostechResponse['success']) {
-                $this->logger->error('Failed to sync with Clostech', [
-                    'error' => $clostechResponse['message']
-                ]);
+            // Solo sincronizar con Clostech si es un nuevo storeId
+            if (!$existingStoreId) {
+                // Transformar datos al formato de Clostech
+                $clostechData = $this->storeValidator->formatDataForClostech($storeId, $storeInfo);
                 
-                return [
-                    'success' => true,
-                    'message' => 'Store validated but sync failed',
-                    'storeId' => $storeId,
-                    'storeInfo' => $storeInfo,
-                    'clostech_sync' => false
-                ];
-            }
-            
-            // Obtener API key y client_id de Clostech
-            $credentials = $this->getApiCredentials($storeId);
-            
-            if ($credentials['success']) {
-                // Guardar API key y client_id en configuración
-                $this->configWriter->save(
-                    'clostech/integration/api_key',
-                    $credentials['api_key'],
-                    \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-                    0
-                );
+                // Enviar datos a Clostech
+                $clostechResponse = $this->sendToClostech($clostechData);
                 
-                $this->configWriter->save(
-                    'clostech/integration/client_id',
-                    $credentials['client_id'],
-                    \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-                    0
-                );
+                if (!$clostechResponse['success']) {
+                    $this->logger->error('Failed to sync with Clostech', [
+                        'error' => $clostechResponse['message']
+                    ]);
+                    
+                    return [
+                        'success' => true,
+                        'message' => 'Store validated but sync failed',
+                        'storeId' => $storeId,
+                        'storeInfo' => $storeInfo,
+                        'clostech_sync' => false
+                    ];
+                }
                 
-                $this->logger->info('API credentials saved', [
-                    'api_key' => substr($credentials['api_key'], 0, 10) . '...',
-                    'client_id' => $credentials['client_id']
-                ]);
-            } else {
-                $this->logger->warning('Could not retrieve API credentials from Clostech');
+                // Obtener API key y client_id de Clostech
+                $credentials = $this->getApiCredentials($storeId);
+                
+                if ($credentials['success']) {
+                    // Guardar API key y client_id en configuración
+                    $this->configWriter->save(
+                        'clostech/integration/api_key',
+                        $credentials['api_key'],
+                        \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+                        0
+                    );
+                    
+                    $this->configWriter->save(
+                        'clostech/integration/client_id',
+                        $credentials['client_id'],
+                        \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
+                        0
+                    );
+                    
+                    $this->logger->info('API credentials saved', [
+                        'api_key' => substr($credentials['api_key'], 0, 10) . '...',
+                        'client_id' => $credentials['client_id']
+                    ]);
+                } else {
+                    $this->logger->warning('Could not retrieve API credentials from Clostech');
+                }
             }
             
             $this->logger->info('Store validated successfully', [
                 'domain' => $domain,
                 'storeId' => $storeId,
-                'clostech_sync' => $clostechResponse['success']
+                'is_new' => !$existingStoreId
             ]);
             
             return [
@@ -123,7 +144,7 @@ class StoreValidation implements StoreValidationInterface
                 'message' => 'Store validated successfully',
                 'storeId' => $storeId,
                 'storeInfo' => $storeInfo,
-                'clostech_sync' => $clostechResponse['success']
+                'clostech_sync' => !$existingStoreId
             ];
             
         } catch (\Exception $e) {
