@@ -9,6 +9,7 @@ use Clostech\Integration\Api\Data\VariantInterfaceFactory;
 use Magento\Catalog\Api\ProductRepositoryInterface;
 use Magento\Catalog\Api\CategoryRepositoryInterface;
 use Magento\Framework\Api\SearchCriteriaBuilder;
+use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\ConfigurableProduct\Model\ResourceModel\Product\Type\Configurable;
 use Psr\Log\LoggerInterface;
 
@@ -21,6 +22,7 @@ class ProductList implements ProductListInterface
     private LoggerInterface $logger;
     private ProductInterfaceFactory $productFactory;
     private VariantInterfaceFactory $variantFactory;
+    private ScopeConfigInterface $scopeConfig;
 
     public function __construct(
         ProductRepositoryInterface $productRepository,
@@ -29,7 +31,8 @@ class ProductList implements ProductListInterface
         Configurable $configurableType,
         LoggerInterface $logger,
         ProductInterfaceFactory $productFactory,
-        VariantInterfaceFactory $variantFactory
+        VariantInterfaceFactory $variantFactory,
+        ScopeConfigInterface $scopeConfig
     ) {
         $this->productRepository = $productRepository;
         $this->categoryRepository = $categoryRepository;
@@ -38,6 +41,7 @@ class ProductList implements ProductListInterface
         $this->logger = $logger;
         $this->productFactory = $productFactory;
         $this->variantFactory = $variantFactory;
+        $this->scopeConfig = $scopeConfig;
     }
 
     public function getList(): array
@@ -69,8 +73,14 @@ class ProductList implements ProductListInterface
 
     private function buildProductData($product)
     {
+        // Obtener storeId de la configuración
+        $storeId = $this->scopeConfig->getValue(
+            'clostech/integration/store_id',
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+        );
+
         $productDto = $this->productFactory->create();
-        $productDto->setStoreId('');
+        $productDto->setStoreId($storeId ?? '');
         $productDto->setName($product->getName());
         $productDto->setSku($product->getSku());
         $productDto->setTypeClothes($this->determineClothesType($product));
