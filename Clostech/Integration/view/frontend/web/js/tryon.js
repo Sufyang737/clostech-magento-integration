@@ -15,7 +15,7 @@ define([
         const $result = $('#clostech-result');
         const $modalProductName = $('#modal-product-name');
 
-        // URL de la API de Clostech
+        // url de la API de Clostech
         const CLOSTECH_API_URL = 'https://identic-keenan-nonvalorous.ngrok-free.dev';
 
         // Obtener datos del producto desde el botón
@@ -25,7 +25,7 @@ define([
         const storeId = $button.data('store-id');
         const productImageUrl = $button.data('product-image');
 
-        // Variable para guardar el archivo de la foto del usuario
+        // Variable para guardar la foto del usuario
         let userPhotoFile = null;
 
         // Click en el botón "Virtual Try-On"

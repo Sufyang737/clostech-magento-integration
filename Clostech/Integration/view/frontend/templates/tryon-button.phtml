@@ -2,16 +2,18 @@
 /**
  * @var $block \Clostech\Integration\Block\TryOnButton
  */
-$product = $block->getCurrentProduct();
+$product = $block->getCurrentProduct(); <!--Obtiene el producto actual-->
 
 // Si no hay producto, no mostrar nada
 if (!$product) {
     return;
 }
 
-$storeId = $block->getStoreId();
-$productImageUrl = $block->getProductImageUrl();
+$storeId = $block->getStoreId(); <!--Obtiene storeId-->
+$productImageUrl = $block->getProductImageUrl(); <!--Obtiene la url del producto que esta viendo el usuario-->
 ?>
+
+<!--Botón try-on. (reemplazar el HTML del boton con el diseño oficial)-->
 
 <div class="clostech-tryon-wrapper">
     <button id="clostech-tryon-btn" 
@@ -26,7 +28,8 @@ $productImageUrl = $block->getProductImageUrl();
     </button>
 </div>
 
-<!-- Modal del Try-On -->
+<!-- Modal del Try-On (reemplazar el HTML del modal con el diseño oficial)-->
+
 <div id="clostech-tryon-modal" class="clostech-modal" style="display: none;">
     <div class="clostech-modal-content">
         <span class="clostech-modal-close">&times;</span>
@@ -58,6 +61,7 @@ $productImageUrl = $block->getProductImageUrl();
     </div>
 </div>
 
+<!--Llamada al archivo con la logica del modal-->
 <script type="text/x-magento-init">
 {
     "#clostech-tryon-btn": {

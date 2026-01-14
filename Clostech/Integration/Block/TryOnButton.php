@@ -26,6 +26,7 @@ class TryOnButton extends Template
         parent::__construct($context, $data);
     }
     
+    // obtiene el producto que el usuario está viendo
     public function getCurrentProduct()
     {
         return $this->registry->registry('current_product');
@@ -49,7 +50,7 @@ class TryOnButton extends Template
         return $product ? $product->getName() : null;
     }
     
-     // Obtiene el storeId de Clostech desde la configuración de la tienda
+     // obtiene el storeId de la config de la tienda
 
     public function getStoreId(): ?string
     {
@@ -60,8 +61,7 @@ class TryOnButton extends Template
     }
     
     
-    //Obtiene la URL de la imagen del producto
-
+    // obtiene la URL de la imagen del producto
     public function getProductImageUrl(): ?string
     {
         $product = $this->getCurrentProduct();

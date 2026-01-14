@@ -197,7 +197,7 @@ class StoreValidation implements StoreValidationInterface
             if ($statusCode >= 200 && $statusCode < 300) {
                 return [
                     'success' => true,
-                    'message' => 'Data synced successfully',
+                    'message' => 'datos sincronizados con exito',
                     'response' => $response
                 ];
             }
@@ -227,7 +227,7 @@ class StoreValidation implements StoreValidationInterface
             $clostechUrl = $this->getClostechUrl();
             $endpoint = $clostechUrl . '/api/apikeys/store';
             
-            $this->logger->info('🔑 Requesting API credentials from Clostech', [
+            $this->logger->info('Requesting API credentials from Clostech', [
                 'endpoint' => $endpoint,
                 'store_id' => $storeId
             ]);

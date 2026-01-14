@@ -1,11 +1,11 @@
 <!--
     Magento usa archivos xml (como este) para definir
-    dónde aparecen los elementos en la página
+    dónde aparecen los elementos en la página (en este caso el boton)
 
     referenceContainer: Busca el contenedor dónde está la info del producto (pdp)
-    block: define qué clase php renderiza el contenido
-    template: define que archivo PHTML usar
-    before: coloca el boton antes del precio
+    block: define qué clase php maneja la logica
+    template: define que archivo PHTML renderiza el html
+    before: coloca el boton antes del precio (define la posicion, basicamente)
 
 
 -->
