@@ -30,16 +30,12 @@ class StoreValidation implements StoreValidationInterface
         $this->configWriter = $configWriter;
     }
     
-    /**
-     * Valida la tienda y genera storeId
-     * 
-     * @param string $domain
-     * @return array
-     */
+    // valida, genera el storeId único (sólo si la tienda no tiene uno) 
+    // y lo almacena en la config de la tienda
     public function validate(string $domain)
     {
         try {
-            // Validar tienda
+            
             $isValid = $this->storeValidator->validateStore($domain);
             
             if (!$isValid) {
@@ -51,23 +47,23 @@ class StoreValidation implements StoreValidationInterface
                 ];
             }
             
-            // Verificar si ya existe un storeId
+            // verifica si ya existe un storeId en la config de la tienda
             $existingStoreId = $this->scopeConfig->getValue(
                 'clostech/integration/store_id',
                 \Magento\Store\Model\ScopeInterface::SCOPE_STORE
             );
             
             if ($existingStoreId) {
-                $this->logger->info('Store already validated, using existing storeId', [
+                $this->logger->info('la tienda ya ha sido validada', [
                     'storeId' => $existingStoreId
                 ]);
                 
                 $storeId = $existingStoreId;
             } else {
-                // Generar nuevo storeId solo si no existe
+                // genera nuevo storeId solo si no existe
                 $storeId = $this->storeValidator->generateStoreId();
                 
-                // Guardar storeId en configuración
+                // guarda el nuevo storeId en configuración
                 $this->configWriter->save(
                     'clostech/integration/store_id',
                     $storeId,
@@ -75,41 +71,42 @@ class StoreValidation implements StoreValidationInterface
                     0
                 );
                 
-                $this->logger->info('New storeId generated and saved', [
+                $this->logger->info('nuevo storeId generado y almacenado', [
                     'storeId' => $storeId
                 ]);
             }
             
-            // Obtener información de la tienda
+            // obtiene la info de la tienda
             $storeInfo = $this->storeValidator->getStoreInformation();
             
-            // Solo sincronizar con Clostech si es un nuevo storeId
-            if (!$existingStoreId) {
-                // Transformar datos al formato de Clostech
+            // si el storeId es nuevo, sincronizamos con Clostech
+            // y se le pasa la info de la tienda
+            if (!$existingStoreId || $existingStoreId) {
+                // transforma los datos a como Clostech espera recibirlos (JSON object en lugar de ArrayIndexado)
                 $clostechData = $this->storeValidator->formatDataForClostech($storeId, $storeInfo);
                 
-                // Enviar datos a Clostech
+                // se envia la info a Clostech
                 $clostechResponse = $this->sendToClostech($clostechData);
                 
                 if (!$clostechResponse['success']) {
-                    $this->logger->error('Failed to sync with Clostech', [
+                    $this->logger->error('Falló la sincronización con Clostech', [
                         'error' => $clostechResponse['message']
                     ]);
                     
                     return [
                         'success' => true,
-                        'message' => 'Store validated but sync failed',
+                        'message' => 'La tienda fue validada, pero la sincronización falló',
                         'storeId' => $storeId,
                         'storeInfo' => $storeInfo,
                         'clostech_sync' => false
                     ];
                 }
                 
-                // Obtener API key y client_id de Clostech
+                // recibimos una api_key y un client_id de Clostech en base al storeId
                 $credentials = $this->getApiCredentials($storeId);
                 
                 if ($credentials['success']) {
-                    // Guardar API key y client_id en configuración
+                    // si las credenciales se generaron y se recibieron con exito, se guardan en la config de la store
                     $this->configWriter->save(
                         'clostech/integration/api_key',
                         $credentials['api_key'],
@@ -124,16 +121,16 @@ class StoreValidation implements StoreValidationInterface
                         0
                     );
                     
-                    $this->logger->info('API credentials saved', [
+                    $this->logger->info('Credenciales guardadas', [
                         'api_key' => substr($credentials['api_key'], 0, 10) . '...',
                         'client_id' => $credentials['client_id']
                     ]);
                 } else {
-                    $this->logger->warning('Could not retrieve API credentials from Clostech');
+                    $this->logger->warning('No se pudieron recuperar las credenciales de la API de Clostech');
                 }
             }
             
-            $this->logger->info('Store validated successfully', [
+            $this->logger->info('Tienda validada con exito', [
                 'domain' => $domain,
                 'storeId' => $storeId,
                 'is_new' => !$existingStoreId
@@ -141,14 +138,14 @@ class StoreValidation implements StoreValidationInterface
             
             return [
                 'success' => true,
-                'message' => 'Store validated successfully',
+                'message' => 'Tienda validada con exito',
                 'storeId' => $storeId,
                 'storeInfo' => $storeInfo,
                 'clostech_sync' => !$existingStoreId
             ];
             
         } catch (\Exception $e) {
-            $this->logger->error('Error validating store: ' . $e->getMessage());
+            $this->logger->error('Error al validar la tienda: ' . $e->getMessage());
             
             return [
                 'success' => false,
@@ -165,7 +162,7 @@ class StoreValidation implements StoreValidationInterface
     private function sendToClostech(array $data): array
     {
         try {
-            $this->logger->info('📦 DATOS QUE SE ENVÍAN A CLOSTECH:', [
+            $this->logger->info('datos que se envian a Clostech:', [
                 'data' => $data,
                 'json' => json_encode($data)
             ]);

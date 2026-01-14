@@ -22,9 +22,9 @@ class StoreValidator extends AbstractHelper
     }
     
     
-    //Valida que la tienda Magento sea válida
+    // obtiene el dominio de la tienda del cliente y define si es valida
     
-    public function validateStore(string $domain): bool
+    public function validateStore(string $domain): bool //devuelve un bool
     {
         try {
             $baseUrl = $this->storeManager->getStore()->getBaseUrl();
@@ -41,7 +41,7 @@ class StoreValidator extends AbstractHelper
     }
     
     
-    // Extrae información del cliente desde Magento
+    // importa los productos de la tienda validada
      
     public function getStoreInformation(): array
     {
@@ -82,10 +82,8 @@ class StoreValidator extends AbstractHelper
     
     public function generateStoreId(): string
     {
-        // genera número aaleatorio
         $randomNumber = random_int(100000000, 999999999);
         
-        // convierte a string
         return (string)$randomNumber;
     }
     
@@ -121,7 +119,7 @@ class StoreValidator extends AbstractHelper
     }
 
 
-    // Transforma los datos al formato que espera Clostech
+    // Transforma los datos importados al formato que espera Clostech
  
     public function formatDataForClostech(string $storeId, array $storeInfo): array
     {
