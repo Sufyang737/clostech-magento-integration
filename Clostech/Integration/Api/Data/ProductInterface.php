@@ -1,4 +1,6 @@
 <?php
+
+// define los getters y setters del objeto product
 declare(strict_types=1);
 
 namespace Clostech\Integration\Api\Data;
@@ -8,7 +10,7 @@ interface ProductInterface
     /**
      * @return string
      */
-    public function getStoreId(): string;
+    public function getClientId(): string;
 
     /**
      * @return string
@@ -56,10 +58,10 @@ interface ProductInterface
     public function getVariants(): ?array;
 
     /**
-     * @param string $storeId
+     * @param string $clientId
      * @return $this
      */
-    public function setStoreId(string $storeId): self;
+    public function setClientId(string $clientId): self;
 
     /**
      * @param string $name

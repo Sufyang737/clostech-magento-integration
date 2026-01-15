@@ -1,4 +1,6 @@
 <?php
+
+// Es lo mismo que Product.php, pero para objetos hijos
 declare(strict_types=1);
 
 namespace Clostech\Integration\Model\Data;

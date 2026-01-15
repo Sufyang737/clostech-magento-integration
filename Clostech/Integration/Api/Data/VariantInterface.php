@@ -1,4 +1,6 @@
 <?php
+
+// define los getters y setters del objeto hijo/variante
 declare(strict_types=1);
 
 namespace Clostech\Integration\Api\Data;

@@ -1,4 +1,6 @@
 <?php
+
+// implementa los getters y setters de la interfac (contrato) y crea los campos del objeto Product
 declare(strict_types=1);
 
 namespace Clostech\Integration\Model\Data;
@@ -8,7 +10,7 @@ use Magento\Framework\Model\AbstractModel;
 
 class Product extends AbstractModel implements ProductInterface
 {
-    private string $storeId = '';
+    private string $clientId = '';
     private string $name = '';
     private string $sku = '';
     private string $typeClothes = 'none';
@@ -19,9 +21,9 @@ class Product extends AbstractModel implements ProductInterface
     private bool $useRecomendationSize = false;
     private ?array $variants = null;
 
-    public function getStoreId(): string
+    public function getClientId(): string
     {
-        return $this->storeId;
+        return $this->clientId;
     }
 
     public function getName(): string
@@ -69,9 +71,9 @@ class Product extends AbstractModel implements ProductInterface
         return $this->variants;
     }
 
-    public function setStoreId(string $storeId): ProductInterface
+    public function setClientId(string $clientId): ProductInterface
     {
-        $this->storeId = $storeId;
+        $this->clientId = $clientId;
         return $this;
     }
 
