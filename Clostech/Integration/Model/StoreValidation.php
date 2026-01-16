@@ -1,12 +1,15 @@
 <?php
+
+// este archivo valida la tienda, genera store_id, clostech recibe el store_id y responde con una api_key y client_id
+// los cuales se almacenan en la config de la tienda junto al store_id
 namespace Clostech\Integration\Model;
 
-use Clostech\Integration\Api\StoreValidationInterface;
-use Clostech\Integration\Helper\StoreValidator;
-use Psr\Log\LoggerInterface;
-use Magento\Framework\HTTP\Client\Curl;
-use Magento\Framework\App\Config\ScopeConfigInterface;
-use Magento\Framework\App\Config\Storage\WriterInterface;
+use Clostech\Integration\Api\StoreValidationInterface; // contrato que implementa
+use Clostech\Integration\Helper\StoreValidator; // funciones
+use Psr\Log\LoggerInterface; // para escribir logs
+use Magento\Framework\HTTP\Client\Curl; // para hacer peticiones a clostech
+use Magento\Framework\App\Config\ScopeConfigInterface; // para leer la config de la tienda
+use Magento\Framework\App\Config\Storage\WriterInterface; // para escribir en la config
 
 class StoreValidation implements StoreValidationInterface
 {
