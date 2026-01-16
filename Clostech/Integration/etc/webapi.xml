@@ -2,11 +2,23 @@
 <routes xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
         xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Webapi:etc/webapi.xsd">
 
-    <route url="/clostech/products" method="GET">
+                                    <!--ACA REGISTRAMOS LOS ENDPOINTS-->
+    <!-- endpoint para obtener los productos de la tienda.
+        Ej: Cuando llame a ese endpoint/url, se ejecuta el metodo 'getList'
+        de la clase ProductListInterface  
+    -->
+    <route url="/V1/clostech/products" method="GET">
         <service class="Clostech\Integration\Api\ProductListInterface" method="getList"/>
         <resources>
             <resource ref="anonymous"/>
         </resources>
     </route>
 
+    <!-- endpoint para validar la tienda -->
+    <route url="/V1/clostech/validate-store" method="POST">
+        <service class="Clostech\Integration\Api\StoreValidationInterface" method="validate"/>
+        <resources>
+            <resource ref="anonymous"/>
+        </resources>
+    </route>
 </routes>

@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!--
+    Magento usa archivos xml (como este) para definir
+    dónde aparecen los elementos en la página (en este caso el boton)
+
+    referenceContainer: Busca el contenedor dónde está la info del producto (pdp)
+    block: define qué clase php maneja la logica
+    template: define que archivo PHTML renderiza el html
+    before: coloca el boton antes del precio (define la posicion, basicamente)
+
+
+-->
+<page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+      xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <body>
+        <referenceContainer name="product.info.main">
+            <block class="Clostech\Integration\Block\TryOnButton"
+                   name="clostech.tryon.button" 
+                   template="Clostech_Integration::tryon-button.phtml"
+                   before="product.info.addtocart"/>
+        </referenceContainer>
+    </body>
+</page>
