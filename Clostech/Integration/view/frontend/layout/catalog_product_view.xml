@@ -1,22 +1,43 @@
 <?xml version="1.0"?>
 <!--
     Magento usa archivos xml (como este) para definir
-    dónde aparecen los elementos en la página (en este caso el boton)
+    dónde aparecen los elementos en la página (en este caso el boton y modal)
 
+    <head>: Carga las librerías externas necesarias (React, Tailwind, etc.)
     referenceContainer: Busca el contenedor dónde está la info del producto (pdp)
     block: define qué clase php maneja la logica
     template: define que archivo PHTML renderiza el html
-    before: coloca el boton antes del precio (define la posicion, basicamente)
+    before: coloca el contenido antes del botón Add to Cart
 
 
 -->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <!-- Google Fonts -->
+        <link src="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700&display=swap" 
+              src_type="url" 
+              rel="stylesheet" />
+        
+        <!-- Tailwind CSS -->
+        <script src="https://cdn.tailwindcss.com" src_type="url" />
+        
+        <!-- React & ReactDOM -->
+        <script src="https://unpkg.com/react@18/umd/react.production.min.js" src_type="url" />
+        <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" src_type="url" />
+        
+        <!-- Lucide Icons -->
+        <script src="https://unpkg.com/lucide@latest" src_type="url" />
+        
+        <!-- Babel -->
+        <script src="https://unpkg.com/@babel/standalone/babel.min.js" src_type="url" />
+    </head>
+    
     <body>
         <referenceContainer name="product.info.main">
-            <block class="Clostech\Integration\Block\TryOnButton"
-                   name="clostech.tryon.button" 
-                   template="Clostech_Integration::tryon-button.phtml"
+            <block class="Magento\Framework\View\Element\Template"
+                   name="clostech.tryon.app" 
+                   template="Clostech_Integration::tryon-app.phtml"
                    before="product.info.addtocart"/>
         </referenceContainer>
     </body>

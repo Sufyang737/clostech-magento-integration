@@ -1,71 +1,544 @@
 <?php
 /**
- * @var $block \Clostech\Integration\Block\TryOnButton
+ * Clostech Virtual Try-On Application
+ * Template adaptado para Magento desde index.php
+ * Contiene: Estilos CSS + HTML + Lógica React
  */
-$product = $block->getCurrentProduct(); //Obtiene el producto actual
-
-// Si no hay producto, no mostrar nada
-if (!$product) {
-    return;
-}
-
-$storeId = $block->getStoreId(); //Obtiene storeId
-$productImageUrl = $block->getProductImageUrl(); //Obtiene la url del producto que esta viendo el usuario
 ?>
 
-<!--Botón try-on. (reemplazar el HTML del boton con el diseño oficial)-->
-
-<div class="clostech-tryon-wrapper">
-    <button id="clostech-tryon-btn"
-            class="action primary clostech-tryon-button"
-            type="button"
-            data-product-id="<?= $block->escapeHtmlAttr($block->getCurrentProductId()) ?>"
-            data-product-sku="<?= $block->escapeHtmlAttr($block->getCurrentProductSku()) ?>"
-            data-product-name="<?= $block->escapeHtmlAttr($block->getCurrentProductName()) ?>"
-            data-store-id="<?= $block->escapeHtmlAttr($storeId) ?>"
-            data-product-image="<?= $block->escapeHtmlAttr($productImageUrl) ?>">
-        <span><?= __('Virtual Try-On') ?></span>
-    </button>
-</div>
-
-<!-- Modal del Try-On (reemplazar el HTML del modal con el diseño oficial)-->
-
-<div id="clostech-tryon-modal" class="clostech-modal" style="display: none;">
-    <div class="clostech-modal-content">
-        <span class="clostech-modal-close">&times;</span>
-        <h2><?= __('Virtual Try-On') ?></h2>
-        <p><?= __('Upload your photo to try on: ') ?><strong id="modal-product-name"></strong></p>
-        
-        <div class="clostech-upload-area">
-            <input type="file" id="clostech-photo-upload" accept="image/*">
-            <label for="clostech-photo-upload" class="upload-label">
-                <?= __('Choose Photo') ?>
-            </label>
-        </div>
-        
-        <div id="clostech-preview" style="display: none;">
-            <h3><?= __('Preview') ?></h3>
-            <img id="clostech-preview-image" src="" alt="Preview">
-        </div>
-        
-        <div class="clostech-modal-actions">
-            <button id="clostech-submit-btn" class="action primary" disabled>
-                <?= __('Try On') ?>
-            </button>
-        </div>
-        
-        <div id="clostech-result" style="display: none;">
-            <h3><?= __('Result') ?></h3>
-            <p><?= __('This is where the AI result will be shown.') ?></p>
-        </div>
-    </div>
-</div>
-
-<!--Llamada al archivo con la logica del modal-->
-<script type="text/x-magento-init">
-{
-    "#clostech-tryon-btn": {
-        "Clostech_Integration/js/tryon": {}
+<style>
+    body {
+        font-family: 'Inter', sans-serif;
+        overscroll-behavior-y: none;
     }
-}
+
+    @keyframes scanMove {
+        0% {
+            top: 0%;
+            opacity: 0;
+        }
+
+        10% {
+            opacity: 1;
+        }
+
+        90% {
+            opacity: 1;
+        }
+
+        100% {
+            top: 100%;
+            opacity: 0;
+        }
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    @keyframes spin {
+        0% {
+            transform: rotate(0deg);
+        }
+
+        100% {
+            transform: rotate(360deg);
+        }
+    }
+
+    .animate-scan {
+        animation: scanMove 2.5s ease-in-out infinite;
+    }
+
+    .animate-fade-in {
+        animation: fadeIn 0.6s ease forwards;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+</style>
+
+<!-- React Root -->
+<div id="root" class="w-full h-full flex items-center justify-center"></div>
+
+<!-- Application Logic -->
+<script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+    const { createRoot } = ReactDOM;
+
+    // Icon Helper Component (Replacement for lucide-react)
+    const Icon = ({ name, size = 24, strokeWidth = 2, className = "", ...props }) => {
+        if (typeof lucide === 'undefined') return null;
+        const icon = lucide.icons[name];
+        if (!icon) return null;
+        const svg = icon.toSvg({
+            width: size,
+            height: size,
+            'stroke-width': strokeWidth,
+            class: className,
+            ...props
+        });
+        return <span dangerouslySetInnerHTML={{ __html: svg }} className="inline-flex items-center justify-center" />;
+    };
+
+    const Sun = (props) => <Icon name="sun" {...props} />;
+    const User = (props) => <Icon name="user" {...props} />;
+    const UploadCloud = (props) => <Icon name="upload-cloud" {...props} />;
+    const CheckCircle2 = (props) => <Icon name="check-circle-2" {...props} />;
+    const CircleUser = (props) => <Icon name="circle-user" {...props} />;
+    const X = (props) => <Icon name="x" {...props} />;
+    const ShoppingBag = (props) => <Icon name="shopping-bag" {...props} />;
+    const MessageCircle = (props) => <Icon name="message-circle" {...props} />;
+    const Download = (props) => <Icon name="download" {...props} />;
+
+    // --- CONSTANTS ---
+    const Step = {
+        INSTRUCTIONS: 'instructions',
+        CONFIRMATION: 'confirmation',
+        GENDER: 'gender',
+        AGE: 'age',
+        WEIGHT: 'weight',
+        HEIGHT: 'height',
+        RESULT: 'result',
+    };
+
+    const LoadingState = {
+        IDLE: 'idle',
+        UPLOADING: 'uploading',
+        ANALYZING: 'analyzing',
+    };
+
+    const DEFAULT_IMAGES = {
+        default: 'https://images.unsplash.com/photo-1550614000-4b9519e02d48?q=80&w=1200&auto=format&fit=crop',
+        user: 'https://images.unsplash.com/photo-1532453288672-3a27e9be9efd?q=80&w=1000&auto=format&fit=crop',
+        result: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&w=1000&auto=format&fit=crop',
+    };
+
+    // --- COMPONENTS ---
+
+    // Loader
+    const Loader = ({ message, subMessage, isUploading }) => {
+        return (
+            <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in">
+                <div
+                    className="w-12 h-12 border border-black/10 border-t-black rounded-full mb-8"
+                    style={{ animation: 'spin 1s linear infinite' }}
+                />
+                <div className="text-sm font-semibold uppercase tracking-[0.15em] mb-2 text-black">
+                    {message}
+                </div>
+                <div className="text-xs font-mono text-gray-400">
+                    {subMessage}
+                </div>
+            </div>
+        );
+    };
+
+    // VisualPanel
+    const VisualPanel = ({ imageSrc, loadingState }) => {
+        const isUploading = loadingState === LoadingState.UPLOADING;
+        const isAnalyzing = loadingState === LoadingState.ANALYZING;
+
+        return (
+            <section className="relative bg-black overflow-hidden flex items-center justify-center h-[30vh] md:h-auto min-h-[300px] md:min-h-[650px] w-full">
+                <div className={`absolute top-0 left-0 w-full h-1 bg-violet-400 shadow-[0_0_15px_#8b5cf6,0_0_30px_#7c3aed] z-20 opacity-0 transition-opacity duration-300 ${isAnalyzing ? 'opacity-100 animate-scan' : ''}`} />
+                <div
+                    className={`absolute inset-0 z-10 opacity-0 transition-opacity duration-500 pointer-events-none ${isAnalyzing ? 'opacity-100' : ''}`}
+                    style={{
+                        backgroundImage: `linear-gradient(rgba(124, 58, 237, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(124, 58, 237, 0.1) 1px, transparent 1px)`,
+                        backgroundSize: '50px 50px'
+                    }}
+                />
+                {isAnalyzing && (
+                    <div className="absolute inset-0 bg-gradient-to-b from-purple-900/30 to-violet-600/10 z-10 pointer-events-none" />
+                )}
+                <img
+                    src={imageSrc}
+                    alt="Context"
+                    className={`w-full h-full object-cover transition-all duration-700 ease-in-out
+                ${isUploading ? 'blur-md opacity-50 scale-110 grayscale' : ''}
+                ${isAnalyzing ? 'grayscale contrast-125 brightness-75 mix-blend-luminosity' : 'opacity-100'}
+                `}
+                />
+            </section>
+        );
+    };
+
+    // Steps Components
+    const Instructions = ({ onUpload, exampleImage }) => {
+        const fileInputRef = useRef(null);
+        const handleFileChange = (e) => {
+            if (e.target.files && e.target.files[0]) {
+                onUpload(e.target.files[0]);
+            }
+        };
+        return (
+            <div className="flex flex-col h-full md:justify-center">
+                <div className="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-3 md:mb-6">
+                    <span className="w-1.5 h-1.5 bg-black rounded-full"></span>
+                    ModaNova Labs
+                </div>
+                <h2 className="text-[2.5rem] md:text-[2.5rem] font-light leading-[0.9] tracking-tight mb-4 text-black">
+                    Probador Virtual
+                </h2>
+                <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-6 md:mb-8 max-w-[90%]">
+                    Sube una foto y permite que nuestra IA analice tu morfología para encontrar el talle perfecto.
+                </p>
+                <div className="flex gap-4 md:gap-6 mb-6 md:mb-8">
+                    <div className="flex-1">
+                        <Sun className="w-6 h-6 mb-2 text-black stroke-1" />
+                        <div className="text-[10px] font-bold uppercase tracking-wider mb-1">Iluminación</div>
+                        <div className="text-[10px] md:text-[11px] text-gray-500 leading-tight">Luz natural frontal.</div>
+                    </div>
+                    <div className="flex-1">
+                        <User className="w-6 h-6 mb-2 text-black stroke-1" />
+                        <div className="text-[10px] font-bold uppercase tracking-wider mb-1">Posición</div>
+                        <div className="text-[10px] md:text-[11px] text-gray-500 leading-tight">Cuerpo entero.</div>
+                    </div>
+                </div>
+                {exampleImage && (
+                    <div className="md:hidden relative w-full aspect-[4/3] mb-6 rounded-sm overflow-hidden bg-gray-50 border border-gray-100 shadow-sm">
+                        <img src={exampleImage} alt="Ejemplo" className="w-full h-full object-cover opacity-90 grayscale-[20%]" />
+                        <div className="absolute top-3 left-3 bg-white/90 backdrop-blur text-black text-[9px] px-2 py-1 rounded-sm uppercase tracking-widest font-bold shadow-sm border border-gray-200 z-10">
+                            Ejemplo
+                        </div>
+                        <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                    </div>
+                )}
+                <input type="file" hidden ref={fileInputRef} accept="image/*" onChange={handleFileChange} />
+                <div className="mt-auto md:mt-0 pt-2">
+                    <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full bg-black text-white border border-black p-5 text-xs md:text-sm uppercase tracking-[0.15em] font-medium hover:bg-zinc-800 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
+                        <UploadCloud size={18} />
+                        Subir Foto
+                    </button>
+                    <p className="text-center text-[0.65rem] text-gray-400 mt-4 md:pb-0">Privacidad asegurada · Procesamiento seguro</p>
+                </div>
+            </div>
+        );
+    };
+
+    const Confirmation = ({ onContinue, onChangePhoto }) => {
+        return (
+            <div className="flex flex-col">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-green-500 mb-6">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    Análisis Completo
+                </div>
+                <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-8 text-black">Excelente Toma</h2>
+                <div className="flex flex-col gap-4 mb-10">
+                    <div className="flex items-center gap-4 py-4 border-b border-gray-100">
+                        <CheckCircle2 className="w-5 h-5 text-black" />
+                        <span className="text-sm font-medium text-gray-900">Iluminación</span>
+                        <span className="text-xs text-gray-400 font-mono ml-auto">100%</span>
+                    </div>
+                    <div className="flex items-center gap-4 py-4 border-b border-gray-100">
+                        <CheckCircle2 className="w-5 h-5 text-black" />
+                        <span className="text-sm font-medium text-gray-900">Contraste</span>
+                        <span className="text-xs text-gray-400 font-mono ml-auto">CLARO</span>
+                    </div>
+                </div>
+                <button type="button" onClick={onContinue} className="w-full bg-black text-white border border-black p-5 text-sm uppercase tracking-[0.15em] font-medium hover:bg-zinc-800 transition-colors">Continuar</button>
+                <button type="button" onClick={onChangePhoto} className="w-full bg-transparent text-gray-400 hover:text-black mt-6 text-xs uppercase tracking-[0.1em] transition-colors">Cambiar Foto</button>
+            </div>
+        );
+    };
+
+    const GenderSelection = ({ selected, onSelect, onNext, onBack }) => {
+        const handleSelect = (gender) => {
+            onSelect(gender);
+            setTimeout(onNext, 300);
+        };
+        return (
+            <div className="flex flex-col h-full">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-6">
+                    <span className="w-1.5 h-1.5 bg-black rounded-full"></span>
+                    Datos Corporales
+                </div>
+                <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-4 text-black">¿Cuál es tu género?</h2>
+                <p className="text-sm text-gray-500 leading-relaxed mb-8">Para optimizar el corte de la prenda.</p>
+                <div className="grid grid-cols-2 gap-5 mb-8">
+                    <button onClick={() => handleSelect('female')} className={`border p-10 flex flex-col items-center gap-4 transition-all duration-300 rounded-sm group ${selected === 'female' ? 'border-black text-black shadow-lg' : 'border-gray-100 text-gray-400 hover:border-black hover:text-black hover:-translate-y-1'}`}>
+                        <CircleUser className="w-10 h-10 stroke-1" />
+                        <span className="text-sm uppercase tracking-[0.1em]">Mujer</span>
+                    </button>
+                    <button onClick={() => handleSelect('male')} className={`border p-10 flex flex-col items-center gap-4 transition-all duration-300 rounded-sm group ${selected === 'male' ? 'border-black text-black shadow-lg' : 'border-gray-100 text-gray-400 hover:border-black hover:text-black hover:-translate-y-1'}`}>
+                        <User className="w-10 h-10 stroke-1" />
+                        <span className="text-sm uppercase tracking-[0.1em]">Hombre</span>
+                    </button>
+                </div>
+                <div className="mt-auto">
+                    <button type="button" onClick={onBack} className="w-full bg-transparent text-gray-400 hover:text-black text-xs uppercase tracking-[0.1em] transition-colors">Atrás</button>
+                </div>
+            </div>
+        );
+    };
+
+    const MeasurementInput = ({ title, value, suffix, placeholder, isLastStep = false, onChange, onNext, onBack }) => {
+        const inputRef = useRef(null);
+        useEffect(() => {
+            const timer = setTimeout(() => inputRef.current?.focus(), 100);
+            return () => clearTimeout(timer);
+        }, []);
+        const handleKeyDown = (e) => {
+            if (e.key === 'Enter' && value) onNext();
+        };
+        return (
+            <div className="flex flex-col h-full">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-6">
+                    <span className="w-1.5 h-1.5 bg-black rounded-full"></span>
+                    Datos Corporales
+                </div>
+                <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-4 text-black">{title}</h2>
+                <div className="relative my-10 border-b border-gray-200 focus-within:border-black transition-colors duration-300">
+                    <input ref={inputRef} type="number" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} className="w-full text-6xl md:text-7xl font-thin py-2 bg-transparent outline-none text-black placeholder-gray-200" />
+                    <span className="absolute right-0 bottom-4 text-base text-gray-400 tracking-wider">{suffix}</span>
+                </div>
+                <div className="mt-auto flex flex-col gap-6">
+                    <button type="button" onClick={onNext} disabled={!value} className="w-full bg-black text-white border border-black p-5 text-sm uppercase tracking-[0.15em] font-medium hover:bg-zinc-800 transition-colors disabled:bg-gray-100 disabled:border-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed">
+                        {isLastStep ? 'Analizar' : 'Siguiente'}
+                    </button>
+                    <button type="button" onClick={onBack} className="w-full bg-transparent text-gray-400 hover:text-black text-xs uppercase tracking-[0.1em] transition-colors">Atrás</button>
+                </div>
+            </div>
+        );
+    };
+
+    // --- NEW UPDATED RESULT COMPONENT (Premium 3-Options) ---
+    const SIZES = ['M', 'L', 'XL'];
+    const COLORS = ['#1a1a1a', '#e8e0d5', '#4a5568'];
+
+    const Result = ({ userData, onReset }) => {
+        const [selectedSize, setSelectedSize] = useState('L');
+        const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+
+        const titles = userData.gender === 'male'
+            ? ['Te queda impecable', 'Ajuste Perfecto', 'Gran Estilo']
+            : ['Estás radiante', 'Te queda divino', 'Silueta Perfecta'];
+        const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+
+        const handleWhatsapp = () => {
+            const text = `¡Mira cómo me queda esta prenda! Mi talla ideal es ${selectedSize} según ModaNova AI.`;
+            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+        };
+
+        const getLabel = (size) => {
+            if (size === 'L') return 'Ideal';
+            if (size === 'M') return 'Ajustado';
+            if (size === 'XL') return 'Suelto';
+            return '';
+        };
+
+        return (
+            <div className="flex flex-col animate-fade-in h-full">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-black mb-6">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    Match: 98%
+                </div>
+                <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-4 text-black">{randomTitle}</h2>
+                <p className="text-sm text-gray-500 leading-relaxed mb-12">
+                    Te recomiendo <strong className="text-black font-semibold">Talla {selectedSize}</strong>
+                </p>
+
+                {/* --- Premium 3-Option Size Selector --- */}
+                <div className="w-full max-w-[320px] mx-auto mb-14 select-none">
+                    <div className="relative">
+                        {/* Background Trace Line */}
+                        <div className="absolute top-[10px] left-2 right-2 h-[1px] bg-gray-100 -z-10"></div>
+                        <div className="flex justify-between items-start w-full px-1">
+                            {SIZES.map((size) => {
+                                const isSelected = selectedSize === size;
+                                return (
+                                    <button key={size} onClick={() => setSelectedSize(size)} className="group flex flex-col items-center gap-4 focus:outline-none cursor-pointer">
+                                        {/* Dot Indicator */}
+                                        <div className={`
+                                    w-6 h-6 rounded-full border-2 transition-all duration-300 ease-out relative z-10
+                                    ${isSelected ? 'bg-black border-black scale-110 shadow-lg ring-4 ring-black/5' : 'bg-white border-gray-200 group-hover:border-gray-300 group-hover:scale-105'}
+                                `}></div>
+                                        {/* Text Stack */}
+                                        <div className={`flex flex-col items-center transition-all duration-300 transform ${isSelected ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-1'}`}>
+                                            <span className={`text-lg font-bold leading-none mb-1 ${isSelected ? 'text-black' : 'text-gray-400'}`}>{size}</span>
+                                            <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-gray-500">{getLabel(size)}</span>
+                                        </div>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    </div>
+                </div>
+
+                <div className="text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-4">Variantes</div>
+                <div className="flex gap-4 mb-auto">
+                    {COLORS.map((color) => (
+                        <button
+                            key={color}
+                            onClick={() => setSelectedColor(color)}
+                            className={`w-10 h-10 rounded-full border border-gray-200 relative transition-all duration-300 hover:scale-105 hover:shadow-md ${selectedColor === color ? 'ring-1 ring-offset-4 ring-black shadow-sm' : 'opacity-80 hover:opacity-100'}`}
+                            style={{ backgroundColor: color }}
+                        />
+                    ))}
+                </div>
+
+                <div className="mt-8">
+                    <div className="grid grid-cols-[1fr_auto_auto] gap-3 mb-4">
+                        <button className="flex items-center justify-center gap-3 bg-black text-white p-5 text-sm uppercase tracking-widest font-medium hover:bg-zinc-800 transition-colors shadow-sm active:transform active:scale-[0.99]">
+                            <ShoppingBag size={18} />
+                            <span>Añadir {selectedSize}</span>
+                        </button>
+                        <button onClick={handleWhatsapp} className="w-[60px] bg-white border border-gray-200 flex items-center justify-center hover:border-[#25d366] hover:text-[#25d366] transition-colors">
+                            <MessageCircle size={20} />
+                        </button>
+                        <button className="w-[60px] bg-white border border-gray-200 flex items-center justify-center hover:border-black hover:text-black transition-colors">
+                            <Download size={20} />
+                        </button>
+                    </div>
+                    <button type="button" onClick={onReset} className="w-full text-center text-gray-400 hover:text-black text-xs uppercase tracking-[0.1em] transition-colors py-2">Probar otra prenda</button>
+                </div>
+            </div>
+        );
+    };
+
+    // ControlPanel
+    const ControlPanel = ({
+        step, loadingState, loadingMessage, loadingSubMessage, userData, previewImage, onUpload, onReset, onUpdateUser, onNext, onBack, onAnalyze
+    }) => {
+        const renderStep = () => {
+            switch (step) {
+                case Step.INSTRUCTIONS: return <Instructions onUpload={onUpload} exampleImage={previewImage} />;
+                case Step.CONFIRMATION: return <Confirmation onContinue={onNext} onChangePhoto={onReset} />;
+                case Step.GENDER: return <GenderSelection selected={userData.gender} onSelect={(gender) => onUpdateUser({ gender })} onNext={onNext} onBack={onBack} />;
+                case Step.AGE: return <MeasurementInput title="Tu Edad" value={userData.age} suffix="años" placeholder="00" onChange={(val) => onUpdateUser({ age: val })} onNext={onNext} onBack={onBack} />;
+                case Step.WEIGHT: return <MeasurementInput title="Tu Peso" value={userData.weight} suffix="kg" placeholder="00" onChange={(val) => onUpdateUser({ weight: val })} onNext={onNext} onBack={onBack} />;
+                case Step.HEIGHT: return <MeasurementInput title="Tu Altura" value={userData.height} suffix="cm" placeholder="000" onChange={(val) => onUpdateUser({ height: val })} onNext={onAnalyze} onBack={onBack} isLastStep />;
+                case Step.RESULT: return <Result userData={userData} onReset={onReset} />;
+                default: return null;
+            }
+        };
+
+        return (
+            <section className="relative flex-1 bg-white overflow-hidden">
+                <div className="h-full w-full overflow-y-auto no-scrollbar">
+                    <div className="flex flex-col min-h-full p-5 md:p-14 justify-center">
+                        <div className="absolute top-0 right-0 p-5 md:p-8 z-10">
+                            <button onClick={onReset} className="text-gray-800 hover:rotate-90 transition-transform duration-300 p-2 bg-white/80 backdrop-blur-sm rounded-full">
+                                <X size={24} strokeWidth={1.5} />
+                            </button>
+                        </div>
+                        {loadingState !== LoadingState.IDLE && (
+                            <div className="absolute inset-0 z-20 bg-white flex items-center justify-center">
+                                <Loader message={loadingMessage} subMessage={loadingSubMessage} isUploading={loadingState === LoadingState.UPLOADING} />
+                            </div>
+                        )}
+                        {loadingState === LoadingState.IDLE && (
+                            <div className="w-full max-w-md mx-auto animate-fade-in py-8 md:py-0 h-full flex flex-col md:block">
+                                {renderStep()}
+                            </div>
+                        )}
+                    </div>
+                </div>
+            </section>
+        );
+    };
+
+    // --- MAIN APP ---
+    const INITIAL_USER_DATA = { gender: '', age: '', weight: '', height: '' };
+    const INITIAL_STATE = {
+        step: Step.INSTRUCTIONS,
+        loadingState: LoadingState.IDLE,
+        loadingMessage: 'Iniciando análisis...',
+        loadingSubMessage: 'ESPERANDO DATOS',
+        userData: INITIAL_USER_DATA,
+        previewImage: DEFAULT_IMAGES.default,
+    };
+
+    const App = () => {
+        const [state, setState] = useState(INITIAL_STATE);
+
+        const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
+        const updateUserData = (updates) => setState((prev) => ({ ...prev, userData: { ...prev.userData, ...updates } }));
+
+        const handleUpload = (file) => {
+            updateState({ loadingState: LoadingState.UPLOADING, loadingMessage: 'Procesando Imagen', loadingSubMessage: 'ANALIZANDO GEOMETRÍA' });
+            const objectUrl = URL.createObjectURL(file);
+            setTimeout(() => {
+                updateState({ loadingState: LoadingState.IDLE, step: Step.CONFIRMATION, previewImage: objectUrl });
+            }, 2000);
+        };
+
+        const handleReset = () => setState(INITIAL_STATE);
+
+        const handleNext = () => {
+            switch (state.step) {
+                case Step.CONFIRMATION: updateState({ step: Step.GENDER }); break;
+                case Step.GENDER: updateState({ step: Step.AGE }); break;
+                case Step.AGE: updateState({ step: Step.WEIGHT }); break;
+                case Step.WEIGHT: updateState({ step: Step.HEIGHT }); break;
+                default: break;
+            }
+        };
+
+        const handleBack = () => {
+            switch (state.step) {
+                case Step.GENDER: updateState({ step: Step.CONFIRMATION }); break;
+                case Step.AGE: updateState({ step: Step.GENDER }); break;
+                case Step.WEIGHT: updateState({ step: Step.AGE }); break;
+                case Step.HEIGHT: updateState({ step: Step.WEIGHT }); break;
+                default: break;
+            }
+        };
+
+        const handleAnalyze = () => {
+            const messages = ['Escaneando biometría...', 'Mapeando puntos clave...', 'Calculando ajuste...', 'Finalizando...'];
+            let msgIndex = 0;
+            updateState({ loadingState: LoadingState.ANALYZING, loadingMessage: messages[0], loadingSubMessage: 'INTELIGENCIA ARTIFICIAL' });
+            const interval = setInterval(() => {
+                msgIndex++;
+                if (msgIndex < messages.length) updateState({ loadingMessage: messages[msgIndex] });
+            }, 1000);
+            setTimeout(() => {
+                clearInterval(interval);
+                updateState({ loadingState: LoadingState.IDLE, step: Step.RESULT, previewImage: DEFAULT_IMAGES.result });
+            }, 4500);
+        };
+
+        const isInstructionStep = state.step === Step.INSTRUCTIONS;
+
+        return (
+            <main className="w-full h-full md:h-auto md:w-[90%] md:max-w-[1100px] bg-white md:shadow-2xl overflow-hidden flex flex-col md:grid md:grid-cols-[45%_55%] md:min-h-[650px]">
+                <div className={`${isInstructionStep ? 'hidden md:block' : 'block'} w-full h-[35dvh] md:h-auto`}>
+                    <VisualPanel imageSrc={state.previewImage} loadingState={state.loadingState} />
+                </div>
+                <ControlPanel
+                    step={state.step}
+                    loadingState={state.loadingState}
+                    loadingMessage={state.loadingMessage}
+                    loadingSubMessage={state.loadingSubMessage}
+                    userData={state.userData}
+                    previewImage={state.previewImage}
+                    onUpload={handleUpload}
+                    onReset={handleReset}
+                    onUpdateUser={updateUserData}
+                    onNext={handleNext}
+                    onBack={handleBack}
+                    onAnalyze={handleAnalyze}
+                />
+            </main>
+        );
+    };
+
+    const root = createRoot(document.getElementById('root'));
+    root.render(<App />);
 </script>
