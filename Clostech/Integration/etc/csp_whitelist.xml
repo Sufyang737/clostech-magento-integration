@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<csp_whitelist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+               xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Csp:etc/csp_whitelist.xsd">
+    <policies>
+        <!-- Allow external scripts -->
+        <policy id="script-src">
+            <values>
+                <value id="cdn_tailwindcss" type="host">cdn.tailwindcss.com</value>
+                <value id="unpkg_react" type="host">unpkg.com</value>
+            </values>
+        </policy>
+        
+        <!-- Allow external styles -->
+        <policy id="style-src">
+            <values>
+                <value id="google_fonts" type="host">fonts.googleapis.com</value>
+                <value id="google_fonts_static" type="host">fonts.gstatic.com</value>
+                <value id="cdn_tailwindcss_style" type="host">cdn.tailwindcss.com</value>
+            </values>
+        </policy>
+        
+        <!-- Allow font downloads -->
+        <policy id="font-src">
+            <values>
+                <value id="google_fonts_font" type="host">fonts.gstatic.com</value>
+            </values>
+        </policy>
+    </policies>
+</csp_whitelist>
