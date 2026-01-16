@@ -1,0 +1,26 @@
+<?php
+/**
+ * Clostech Virtual Try-On Container
+ * Loads the compiled React bundle
+ */
+?>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700&display=swap" rel="stylesheet" />
+
+<!-- Tailwind CSS (CDN for utility classes) -->
+<script src="https://cdn.tailwindcss.com"></script>
+
+<!-- React Root Container -->
+<div id="clostech-tryon-root"></div>
+
+<!-- Load the compiled bundle -->
+<script>
+require(['Clostech_Integration/js/tryon-bundle'], function(TryOn) {
+    if (TryOn && TryOn.initTryOn) {
+        TryOn.initTryOn();
+    }
+});
+</script>

@@ -1,20 +1,19 @@
 <?xml version="1.0"?>
 <!--
-    Magento usa archivos xml (como este) para definir
-    dónde aparecen los elementos en la página (en este caso el boton y modal)
-
-    referenceContainer: Busca el contenedor dónde está la info del producto (pdp)
-    block: define qué clase php maneja la logica
-    template: define que archivo PHTML renderiza el html
-    before: coloca el contenido antes del botón Add to Cart
+    Magento layout para cargar el probador virtual compilado con Vite
 -->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
+    <head>
+        <!-- Cargar CSS compilado -->
+        <css src="Clostech_Integration::css/tryon-styles.css"/>
+    </head>
+    
     <body>
         <referenceContainer name="product.info.main">
             <block class="Magento\Framework\View\Element\Template"
                    name="clostech.tryon.app" 
-                   template="Clostech_Integration::tryon-app.phtml"
+                   template="Clostech_Integration::tryon-container.phtml"
                    before="product.info.addtocart"/>
         </referenceContainer>
     </body>
