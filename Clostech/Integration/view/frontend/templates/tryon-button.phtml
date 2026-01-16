@@ -2,15 +2,15 @@
 /**
  * @var $block \Clostech\Integration\Block\TryOnButton
  */
-$product = $block->getCurrentProduct(); <!--Obtiene el producto actual-->
+$product = $block->getCurrentProduct(); //Obtiene el producto actual
 
 // Si no hay producto, no mostrar nada
 if (!$product) {
     return;
 }
 
-$storeId = $block->getStoreId(); <!--Obtiene storeId-->
-$productImageUrl = $block->getProductImageUrl(); <!--Obtiene la url del producto que esta viendo el usuario-->
+$storeId = $block->getStoreId(); //Obtiene storeId
+$productImageUrl = $block->getProductImageUrl(); //Obtiene la url del producto que esta viendo el usuario
 ?>
 
 <!--Botón try-on. (reemplazar el HTML del boton con el diseño oficial)-->
