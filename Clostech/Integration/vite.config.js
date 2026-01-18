@@ -6,7 +6,8 @@ export default defineConfig({
   plugins: [react()],
   define: {
     'process.env': {},
-    'process.env.NODE_ENV': JSON.stringify('production')
+    'process.env.NODE_ENV': JSON.stringify('production'),
+    'process': JSON.stringify({})
   },
   build: {
     outDir: 'view/frontend/web',
