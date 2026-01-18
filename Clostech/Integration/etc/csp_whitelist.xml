@@ -2,7 +2,6 @@
 <csp_whitelist xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
                xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Csp:etc/csp_whitelist.xsd">
     <policies>
-        <!-- Allow external scripts -->
         <policy id="script-src">
             <values>
                 <value id="cdn_tailwindcss" type="host">cdn.tailwindcss.com</value>
@@ -10,7 +9,6 @@
             </values>
         </policy>
         
-        <!-- Allow external styles -->
         <policy id="style-src">
             <values>
                 <value id="google_fonts" type="host">fonts.googleapis.com</value>
@@ -19,10 +17,15 @@
             </values>
         </policy>
         
-        <!-- Allow font downloads -->
         <policy id="font-src">
             <values>
                 <value id="google_fonts_font" type="host">fonts.gstatic.com</value>
+            </values>
+        </policy>
+
+        <policy id="img-src">
+            <values>
+                <value id="unsplash_images" type="host">images.unsplash.com</value>
             </values>
         </policy>
     </policies>
