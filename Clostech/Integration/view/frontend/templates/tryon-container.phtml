@@ -1,26 +1,16 @@
-<?php
-/**
- * Clostech Virtual Try-On Container
- * Loads the compiled React bundle
- */
-?>
+<!-- Botón Try-On -->
+<button id="clostech-tryon-btn" style="background:#000; color:#fff; padding:15px 30px; border:none; cursor:pointer; text-transform:uppercase; font-weight:600;">
+    Probador Virtual
+</button>
 
-<!-- Google Fonts -->
-<link rel="preconnect" href="https://fonts.googleapis.com" />
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;300;400;500;600;700&display=swap" rel="stylesheet" />
+<!-- Modal con Iframe -->
+<div id="clostech-modal" style="display:none; position:fixed; top:0; left:0; width:100vw; height:100vh; background:rgba(0,0,0,0.9); z-index:9999;">
+    <button onclick="document.getElementById('clostech-modal').style.display='none'" style="position:absolute; top:20px; right:20px; background:#fff; border:none; width:40px; height:40px; cursor:pointer; font-size:24px;">×</button>
+    <iframe src="/clostech-tryon.html" style="width:100%; height:100%; border:none;"></iframe>
+</div>
 
-<!-- Tailwind CSS (CDN for utility classes) -->
-<script src="https://cdn.tailwindcss.com"></script>
-
-<!-- React Root Container -->
-<div id="clostech-tryon-root"></div>
-
-<!-- Load the compiled bundle -->
 <script>
-require(['Clostech_Integration/js/tryon-bundle'], function(TryOn) {
-    if (TryOn && TryOn.initTryOn) {
-        TryOn.initTryOn();
-    }
+document.getElementById('clostech-tryon-btn').addEventListener('click', function() {
+    document.getElementById('clostech-modal').style.display = 'block';
 });
 </script>
