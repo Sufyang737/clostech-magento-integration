@@ -1,13 +1,6 @@
 <?xml version="1.0"?>
-<!--
-    Magento layout para cargar el probador virtual compilado con Vite
--->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
-    <head>
-        <!-- Cargar CSS compilado -->
-        <css src="Clostech_Integration::css/tryon-styles.css"/>
-    </head>
     
     <body>
         <referenceContainer name="product.info.main">
