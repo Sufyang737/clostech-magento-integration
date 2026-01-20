@@ -109,21 +109,21 @@
         // API FUNCTIONS
         // =====================================================================
         const uploadUserPhoto = async (file) => {
-            const formData = new FormData();
-            formData.append('file', file);
+        const formData = new FormData();
+        formData.append('file', file);
 
-            const response = await fetch(`${CLOSTECH_API_URL}/api/upload-image`, {
-                method: 'POST',
-                body: formData,
-            });
+        const response = await fetch(`${CLOSTECH_API_URL}/api/upload-image`, {
+            method: 'POST',
+            body: formData,
+        });
 
-            if (!response.ok) throw new Error('Error al subir la imagen');
-            
-            const data = await response.json();
-            if (!data.user_image_url) throw new Error('No se recibió URL de imagen');
-            
-            return data.user_image_url;
-        };
+        if (!response.ok) throw new Error('Error al subir la imagen');
+        
+        const data = await response.json();
+        if (!data.url) throw new Error('No se recibió URL de imagen');
+        
+        return data.url;
+    };
 
         const processWithAI = async (userImageUrl) => {
             const response = await fetch(`${CLOSTECH_API_URL}/api/ai-v2`, {
