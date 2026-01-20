@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-    <title>ModaNova Virtual Fitting Room</title>
+    <title>Clostech Virtual Fitting Room</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -32,68 +32,30 @@
         }
 
         @keyframes scanMove {
-            0% {
-                top: 0%;
-                opacity: 0;
-            }
-
-            10% {
-                opacity: 1;
-            }
-
-            90% {
-                opacity: 1;
-            }
-
-            100% {
-                top: 100%;
-                opacity: 0;
-            }
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
         }
 
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: translateY(10px);
-            }
-
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes spin {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
-        .animate-scan {
-            animation: scanMove 2.5s ease-in-out infinite;
-        }
-
-        .animate-fade-in {
-            animation: fadeIn 0.6s ease forwards;
-        }
-
-        .no-scrollbar::-webkit-scrollbar {
-            display: none;
-        }
-
-        .no-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-        }
+        .animate-scan { animation: scanMove 2.5s ease-in-out infinite; }
+        .animate-fade-in { animation: fadeIn 0.6s ease forwards; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
 
-<body
-    class="bg-[#f5f5f5] text-[#111111] antialiased h-[100dvh] w-full overflow-hidden flex items-center justify-center p-0 md:p-10">
+<body class="bg-[#f5f5f5] text-[#111111] antialiased h-[100dvh] w-full overflow-hidden flex items-center justify-center p-0 md:p-10">
 
     <!-- React Root -->
     <div id="root" class="w-full h-full flex items-center justify-center"></div>
@@ -103,18 +65,14 @@
         const { useState, useEffect, useRef } = React;
         const { createRoot } = ReactDOM;
 
-        // Icon Helper Component (Replacement for lucide-react)
+        // =====================================================================
+        // ICONS
+        // =====================================================================
         const Icon = ({ name, size = 24, strokeWidth = 2, className = "", ...props }) => {
             if (typeof lucide === 'undefined') return null;
             const icon = lucide.icons[name];
             if (!icon) return null;
-            const svg = icon.toSvg({
-                width: size,
-                height: size,
-                'stroke-width': strokeWidth,
-                class: className,
-                ...props
-            });
+            const svg = icon.toSvg({ width: size, height: size, 'stroke-width': strokeWidth, class: className, ...props });
             return <span dangerouslySetInnerHTML={{ __html: svg }} className="inline-flex items-center justify-center" />;
         };
 
@@ -127,8 +85,85 @@
         const ShoppingBag = (props) => <Icon name="shopping-bag" {...props} />;
         const MessageCircle = (props) => <Icon name="message-circle" {...props} />;
         const Download = (props) => <Icon name="download" {...props} />;
+        const AlertCircle = (props) => <Icon name="alert-circle" {...props} />;
 
-        // --- CONSTANTS ---
+        // =====================================================================
+        // CONFIG - Leer parámetros de URL
+        // =====================================================================
+        const getUrlParams = () => {
+            const params = new URLSearchParams(window.location.search);
+            return {
+                productId: params.get('product_id') || null,
+                productSku: params.get('product_sku') || null,
+                productName: params.get('product_name') || null,
+                productImage: params.get('product_image') || null,
+                storeId: params.get('store_id') || null,
+                apiKey: params.get('api_key') || null,
+            };
+        };
+
+        const CONFIG = getUrlParams();
+        const CLOSTECH_API_URL = 'https://identic-keenan-nonvalorous.ngrok-free.dev';
+
+        // =====================================================================
+        // API FUNCTIONS
+        // =====================================================================
+        const uploadUserPhoto = async (file) => {
+            const formData = new FormData();
+            formData.append('file', file);
+
+            const response = await fetch(`${CLOSTECH_API_URL}/api/upload-image`, {
+                method: 'POST',
+                body: formData,
+            });
+
+            if (!response.ok) throw new Error('Error al subir la imagen');
+            
+            const data = await response.json();
+            if (!data.user_image_url) throw new Error('No se recibió URL de imagen');
+            
+            return data.user_image_url;
+        };
+
+        const processWithAI = async (userImageUrl) => {
+            const response = await fetch(`${CLOSTECH_API_URL}/api/ai-v2`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    api_key: CONFIG.apiKey,
+                    store_id: CONFIG.storeId,
+                    product_id: CONFIG.productId,
+                    variant_id: null,
+                    variant_values: null,
+                    user_image_url: userImageUrl,
+                    cloth_image_url: CONFIG.productImage,
+                }),
+            });
+
+            if (!response.ok) throw new Error('Error en el procesamiento de IA');
+            
+            const data = await response.json();
+            if (!data.result_image_url) throw new Error('No se recibió resultado de IA');
+            
+            return data;
+        };
+
+        const saveUsageToLocalStorage = (resultImageUrl) => {
+            const tryOnData = {
+                productId: CONFIG.productId,
+                productName: CONFIG.productName,
+                productSku: CONFIG.productSku,
+                timestamp: Date.now(),
+                imageUrl: resultImageUrl,
+                used: true
+            };
+            localStorage.setItem(`clostech_tryon_${CONFIG.productId}`, JSON.stringify(tryOnData));
+            localStorage.setItem('use_clostech', 'true');
+        };
+
+        // =====================================================================
+        // CONSTANTS
+        // =====================================================================
         const Step = {
             INSTRUCTIONS: 'instructions',
             CONFIRMATION: 'confirmation',
@@ -137,6 +172,7 @@
             WEIGHT: 'weight',
             HEIGHT: 'height',
             RESULT: 'result',
+            ERROR: 'error',
         };
 
         const LoadingState = {
@@ -146,32 +182,33 @@
         };
 
         const DEFAULT_IMAGES = {
-            default: 'https://images.unsplash.com/photo-1550614000-4b9519e02d48?q=80&w=1200&auto=format&fit=crop',
-            user: 'https://images.unsplash.com/photo-1532453288672-3a27e9be9efd?q=80&w=1000&auto=format&fit=crop',
-            result: 'https://images.unsplash.com/photo-1591047139829-d91aecb6caea?q=80&w=1000&auto=format&fit=crop',
+            default: CONFIG.productImage || 'https://placehold.co/600x800/f5f5f5/cccccc?text=Producto',
+            user: null,
+            result: null,
         };
 
-        // --- COMPONENTS ---
+        // =====================================================================
+        // COMPONENTS
+        // =====================================================================
+        const Loader = ({ message, subMessage }) => (
+            <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in">
+                <div className="w-12 h-12 border border-black/10 border-t-black rounded-full mb-8" style={{ animation: 'spin 1s linear infinite' }} />
+                <div className="text-sm font-semibold uppercase tracking-[0.15em] mb-2 text-black">{message}</div>
+                <div className="text-xs font-mono text-gray-400">{subMessage}</div>
+            </div>
+        );
 
-        // Loader
-        const Loader = ({ message, subMessage, isUploading }) => {
-            return (
-                <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in">
-                    <div
-                        className="w-12 h-12 border border-black/10 border-t-black rounded-full mb-8"
-                        style={{ animation: 'spin 1s linear infinite' }}
-                    />
-                    <div className="text-sm font-semibold uppercase tracking-[0.15em] mb-2 text-black">
-                        {message}
-                    </div>
-                    <div className="text-xs font-mono text-gray-400">
-                        {subMessage}
-                    </div>
-                </div>
-            );
-        };
+        const ErrorDisplay = ({ message, onRetry }) => (
+            <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in p-8">
+                <AlertCircle className="w-16 h-16 text-red-500 mb-6" />
+                <h2 className="text-2xl font-light mb-4 text-black">Ocurrió un error</h2>
+                <p className="text-sm text-gray-500 mb-8 max-w-md">{message}</p>
+                <button onClick={onRetry} className="bg-black text-white px-8 py-4 text-sm uppercase tracking-widest hover:bg-zinc-800 transition-colors">
+                    Intentar de nuevo
+                </button>
+            </div>
+        );
 
-        // VisualPanel
         const VisualPanel = ({ imageSrc, loadingState }) => {
             const isUploading = loadingState === LoadingState.UPLOADING;
             const isAnalyzing = loadingState === LoadingState.ANALYZING;
@@ -179,45 +216,34 @@
             return (
                 <section className="relative bg-black overflow-hidden flex items-center justify-center h-[30vh] md:h-auto min-h-[300px] md:min-h-[650px] w-full">
                     <div className={`absolute top-0 left-0 w-full h-1 bg-violet-400 shadow-[0_0_15px_#8b5cf6,0_0_30px_#7c3aed] z-20 opacity-0 transition-opacity duration-300 ${isAnalyzing ? 'opacity-100 animate-scan' : ''}`} />
-                    <div
-                        className={`absolute inset-0 z-10 opacity-0 transition-opacity duration-500 pointer-events-none ${isAnalyzing ? 'opacity-100' : ''}`}
-                        style={{
-                            backgroundImage: `linear-gradient(rgba(124, 58, 237, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(124, 58, 237, 0.1) 1px, transparent 1px)`,
-                            backgroundSize: '50px 50px'
-                        }}
-                    />
-                    {isAnalyzing && (
-                        <div className="absolute inset-0 bg-gradient-to-b from-purple-900/30 to-violet-600/10 z-10 pointer-events-none" />
+                    <div className={`absolute inset-0 z-10 opacity-0 transition-opacity duration-500 pointer-events-none ${isAnalyzing ? 'opacity-100' : ''}`}
+                        style={{ backgroundImage: `linear-gradient(rgba(124, 58, 237, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(124, 58, 237, 0.1) 1px, transparent 1px)`, backgroundSize: '50px 50px' }} />
+                    {isAnalyzing && <div className="absolute inset-0 bg-gradient-to-b from-purple-900/30 to-violet-600/10 z-10 pointer-events-none" />}
+                    {imageSrc ? (
+                        <img src={imageSrc} alt="Preview" className={`w-full h-full object-cover transition-all duration-700 ease-in-out
+                            ${isUploading ? 'blur-md opacity-50 scale-110 grayscale' : ''}
+                            ${isAnalyzing ? 'grayscale contrast-125 brightness-75 mix-blend-luminosity' : 'opacity-100'}`} />
+                    ) : (
+                        <div className="w-full h-full bg-gray-900 flex items-center justify-center">
+                            <span className="text-gray-600 text-sm uppercase tracking-widest">Sin imagen</span>
+                        </div>
                     )}
-                    <img
-                        src={imageSrc}
-                        alt="Context"
-                        className={`w-full h-full object-cover transition-all duration-700 ease-in-out
-                    ${isUploading ? 'blur-md opacity-50 scale-110 grayscale' : ''}
-                    ${isAnalyzing ? 'grayscale contrast-125 brightness-75 mix-blend-luminosity' : 'opacity-100'}
-                    `}
-                    />
                 </section>
             );
         };
 
-        // Steps Components
-        const Instructions = ({ onUpload, exampleImage }) => {
+        const Instructions = ({ onUpload, productImage }) => {
             const fileInputRef = useRef(null);
             const handleFileChange = (e) => {
-                if (e.target.files && e.target.files[0]) {
-                    onUpload(e.target.files[0]);
-                }
+                if (e.target.files && e.target.files[0]) onUpload(e.target.files[0]);
             };
             return (
                 <div className="flex flex-col h-full md:justify-center">
                     <div className="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-3 md:mb-6">
                         <span className="w-1.5 h-1.5 bg-black rounded-full"></span>
-                        ModaNova Labs
+                        Clostech
                     </div>
-                    <h2 className="text-[2.5rem] md:text-[2.5rem] font-light leading-[0.9] tracking-tight mb-4 text-black">
-                        Probador Virtual
-                    </h2>
+                    <h2 className="text-[2.5rem] md:text-[2.5rem] font-light leading-[0.9] tracking-tight mb-4 text-black">Probador Virtual</h2>
                     <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-6 md:mb-8 max-w-[90%]">
                         Sube una foto y permite que nuestra IA analice tu morfología para encontrar el talle perfecto.
                     </p>
@@ -233,13 +259,10 @@
                             <div className="text-[10px] md:text-[11px] text-gray-500 leading-tight">Cuerpo entero.</div>
                         </div>
                     </div>
-                    {exampleImage && (
+                    {productImage && (
                         <div className="md:hidden relative w-full aspect-[4/3] mb-6 rounded-sm overflow-hidden bg-gray-50 border border-gray-100 shadow-sm">
-                            <img src={exampleImage} alt="Ejemplo" className="w-full h-full object-cover opacity-90 grayscale-[20%]" />
-                            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur text-black text-[9px] px-2 py-1 rounded-sm uppercase tracking-widest font-bold shadow-sm border border-gray-200 z-10">
-                                Ejemplo
-                            </div>
-                            <div className="absolute inset-0 opacity-20 pointer-events-none" style={{ backgroundImage: 'linear-gradient(#000 1px, transparent 1px), linear-gradient(90deg, #000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
+                            <img src={productImage} alt="Producto" className="w-full h-full object-cover opacity-90" />
+                            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur text-black text-[9px] px-2 py-1 rounded-sm uppercase tracking-widest font-bold shadow-sm border border-gray-200 z-10">Producto</div>
                         </div>
                     )}
                     <input type="file" hidden ref={fileInputRef} accept="image/*" onChange={handleFileChange} />
@@ -254,37 +277,27 @@
             );
         };
 
-        const Confirmation = ({ onContinue, onChangePhoto }) => {
-            return (
-                <div className="flex flex-col">
-                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-green-500 mb-6">
-                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                        Análisis Completo
-                    </div>
-                    <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-8 text-black">Excelente Toma</h2>
-                    <div className="flex flex-col gap-4 mb-10">
-                        <div className="flex items-center gap-4 py-4 border-b border-gray-100">
-                            <CheckCircle2 className="w-5 h-5 text-black" />
-                            <span className="text-sm font-medium text-gray-900">Iluminación</span>
-                            <span className="text-xs text-gray-400 font-mono ml-auto">100%</span>
-                        </div>
-                        <div className="flex items-center gap-4 py-4 border-b border-gray-100">
-                            <CheckCircle2 className="w-5 h-5 text-black" />
-                            <span className="text-sm font-medium text-gray-900">Contraste</span>
-                            <span className="text-xs text-gray-400 font-mono ml-auto">CLARO</span>
-                        </div>
-                    </div>
-                    <button type="button" onClick={onContinue} className="w-full bg-black text-white border border-black p-5 text-sm uppercase tracking-[0.15em] font-medium hover:bg-zinc-800 transition-colors">Continuar</button>
-                    <button type="button" onClick={onChangePhoto} className="w-full bg-transparent text-gray-400 hover:text-black mt-6 text-xs uppercase tracking-[0.1em] transition-colors">Cambiar Foto</button>
+        const Confirmation = ({ onContinue, onChangePhoto }) => (
+            <div className="flex flex-col">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-green-500 mb-6">
+                    <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+                    Foto Recibida
                 </div>
-            );
-        };
+                <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-8 text-black">Excelente Toma</h2>
+                <div className="flex flex-col gap-4 mb-10">
+                    <div className="flex items-center gap-4 py-4 border-b border-gray-100">
+                        <CheckCircle2 className="w-5 h-5 text-black" />
+                        <span className="text-sm font-medium text-gray-900">Imagen cargada</span>
+                        <span className="text-xs text-gray-400 font-mono ml-auto">OK</span>
+                    </div>
+                </div>
+                <button type="button" onClick={onContinue} className="w-full bg-black text-white border border-black p-5 text-sm uppercase tracking-[0.15em] font-medium hover:bg-zinc-800 transition-colors">Continuar</button>
+                <button type="button" onClick={onChangePhoto} className="w-full bg-transparent text-gray-400 hover:text-black mt-6 text-xs uppercase tracking-[0.1em] transition-colors">Cambiar Foto</button>
+            </div>
+        );
 
         const GenderSelection = ({ selected, onSelect, onNext, onBack }) => {
-            const handleSelect = (gender) => {
-                onSelect(gender);
-                setTimeout(onNext, 300);
-            };
+            const handleSelect = (gender) => { onSelect(gender); setTimeout(onNext, 300); };
             return (
                 <div className="flex flex-col h-full">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-6">
@@ -312,13 +325,8 @@
 
         const MeasurementInput = ({ title, value, suffix, placeholder, isLastStep = false, onChange, onNext, onBack }) => {
             const inputRef = useRef(null);
-            useEffect(() => {
-                const timer = setTimeout(() => inputRef.current?.focus(), 100);
-                return () => clearTimeout(timer);
-            }, []);
-            const handleKeyDown = (e) => {
-                if (e.key === 'Enter' && value) onNext();
-            };
+            useEffect(() => { const timer = setTimeout(() => inputRef.current?.focus(), 100); return () => clearTimeout(timer); }, []);
+            const handleKeyDown = (e) => { if (e.key === 'Enter' && value) onNext(); };
             return (
                 <div className="flex flex-col h-full">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-6">
@@ -340,12 +348,11 @@
             );
         };
 
-        // --- NEW UPDATED RESULT COMPONENT (Premium 3-Options) ---
         const SIZES = ['M', 'L', 'XL'];
         const COLORS = ['#1a1a1a', '#e8e0d5', '#4a5568'];
 
-        const Result = ({ userData, onReset }) => {
-            const [selectedSize, setSelectedSize] = useState('L');
+        const Result = ({ userData, resultImage, recommendedSize, onReset }) => {
+            const [selectedSize, setSelectedSize] = useState(recommendedSize || 'L');
             const [selectedColor, setSelectedColor] = useState(COLORS[0]);
 
             const titles = userData.gender === 'male'
@@ -354,44 +361,37 @@
             const randomTitle = titles[Math.floor(Math.random() * titles.length)];
 
             const handleWhatsapp = () => {
-                const text = `¡Mira cómo me queda esta prenda! Mi talla ideal es ${selectedSize} según ModaNova AI.`;
+                const text = `¡Mira cómo me queda esta prenda! Mi talla ideal es ${selectedSize} según Clostech AI.`;
                 window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
             };
 
             const getLabel = (size) => {
-                if (size === 'L') return 'Ideal';
-                if (size === 'M') return 'Ajustado';
-                if (size === 'XL') return 'Suelto';
-                return '';
+                if (size === recommendedSize) return 'Ideal';
+                if (SIZES.indexOf(size) < SIZES.indexOf(recommendedSize)) return 'Ajustado';
+                return 'Suelto';
             };
 
             return (
                 <div className="flex flex-col animate-fade-in h-full">
                     <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-black mb-6">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                        Match: 98%
+                        Análisis Completo
                     </div>
                     <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-4 text-black">{randomTitle}</h2>
                     <p className="text-sm text-gray-500 leading-relaxed mb-12">
                         Te recomiendo <strong className="text-black font-semibold">Talla {selectedSize}</strong>
                     </p>
 
-                    {/* --- Premium 3-Option Size Selector --- */}
                     <div className="w-full max-w-[320px] mx-auto mb-14 select-none">
                         <div className="relative">
-                            {/* Background Trace Line */}
                             <div className="absolute top-[10px] left-2 right-2 h-[1px] bg-gray-100 -z-10"></div>
                             <div className="flex justify-between items-start w-full px-1">
                                 {SIZES.map((size) => {
                                     const isSelected = selectedSize === size;
                                     return (
                                         <button key={size} onClick={() => setSelectedSize(size)} className="group flex flex-col items-center gap-4 focus:outline-none cursor-pointer">
-                                            {/* Dot Indicator */}
-                                            <div className={`
-                                        w-6 h-6 rounded-full border-2 transition-all duration-300 ease-out relative z-10
-                                        ${isSelected ? 'bg-black border-black scale-110 shadow-lg ring-4 ring-black/5' : 'bg-white border-gray-200 group-hover:border-gray-300 group-hover:scale-105'}
-                                    `}></div>
-                                            {/* Text Stack */}
+                                            <div className={`w-6 h-6 rounded-full border-2 transition-all duration-300 ease-out relative z-10
+                                                ${isSelected ? 'bg-black border-black scale-110 shadow-lg ring-4 ring-black/5' : 'bg-white border-gray-200 group-hover:border-gray-300 group-hover:scale-105'}`}></div>
                                             <div className={`flex flex-col items-center transition-all duration-300 transform ${isSelected ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-1'}`}>
                                                 <span className={`text-lg font-bold leading-none mb-1 ${isSelected ? 'text-black' : 'text-gray-400'}`}>{size}</span>
                                                 <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-gray-500">{getLabel(size)}</span>
@@ -406,12 +406,9 @@
                     <div className="text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-4">Variantes</div>
                     <div className="flex gap-4 mb-auto">
                         {COLORS.map((color) => (
-                            <button
-                                key={color}
-                                onClick={() => setSelectedColor(color)}
+                            <button key={color} onClick={() => setSelectedColor(color)}
                                 className={`w-10 h-10 rounded-full border border-gray-200 relative transition-all duration-300 hover:scale-105 hover:shadow-md ${selectedColor === color ? 'ring-1 ring-offset-4 ring-black shadow-sm' : 'opacity-80 hover:opacity-100'}`}
-                                style={{ backgroundColor: color }}
-                            />
+                                style={{ backgroundColor: color }} />
                         ))}
                     </div>
 
@@ -434,19 +431,17 @@
             );
         };
 
-        // ControlPanel
-        const ControlPanel = ({
-            step, loadingState, loadingMessage, loadingSubMessage, userData, previewImage, onUpload, onReset, onUpdateUser, onNext, onBack, onAnalyze
-        }) => {
+        const ControlPanel = ({ step, loadingState, loadingMessage, loadingSubMessage, userData, productImage, resultImage, recommendedSize, errorMessage, onUpload, onReset, onUpdateUser, onNext, onBack, onAnalyze }) => {
             const renderStep = () => {
                 switch (step) {
-                    case Step.INSTRUCTIONS: return <Instructions onUpload={onUpload} exampleImage={previewImage} />;
+                    case Step.INSTRUCTIONS: return <Instructions onUpload={onUpload} productImage={productImage} />;
                     case Step.CONFIRMATION: return <Confirmation onContinue={onNext} onChangePhoto={onReset} />;
                     case Step.GENDER: return <GenderSelection selected={userData.gender} onSelect={(gender) => onUpdateUser({ gender })} onNext={onNext} onBack={onBack} />;
                     case Step.AGE: return <MeasurementInput title="Tu Edad" value={userData.age} suffix="años" placeholder="00" onChange={(val) => onUpdateUser({ age: val })} onNext={onNext} onBack={onBack} />;
                     case Step.WEIGHT: return <MeasurementInput title="Tu Peso" value={userData.weight} suffix="kg" placeholder="00" onChange={(val) => onUpdateUser({ weight: val })} onNext={onNext} onBack={onBack} />;
                     case Step.HEIGHT: return <MeasurementInput title="Tu Altura" value={userData.height} suffix="cm" placeholder="000" onChange={(val) => onUpdateUser({ height: val })} onNext={onAnalyze} onBack={onBack} isLastStep />;
-                    case Step.RESULT: return <Result userData={userData} onReset={onReset} />;
+                    case Step.RESULT: return <Result userData={userData} resultImage={resultImage} recommendedSize={recommendedSize} onReset={onReset} />;
+                    case Step.ERROR: return <ErrorDisplay message={errorMessage} onRetry={onReset} />;
                     default: return null;
                 }
             };
@@ -462,7 +457,7 @@
                             </div>
                             {loadingState !== LoadingState.IDLE && (
                                 <div className="absolute inset-0 z-20 bg-white flex items-center justify-center">
-                                    <Loader message={loadingMessage} subMessage={loadingSubMessage} isUploading={loadingState === LoadingState.UPLOADING} />
+                                    <Loader message={loadingMessage} subMessage={loadingSubMessage} />
                                 </div>
                             )}
                             {loadingState === LoadingState.IDLE && (
@@ -476,15 +471,22 @@
             );
         };
 
-        // --- MAIN APP ---
+        // =====================================================================
+        // MAIN APP
+        // =====================================================================
         const INITIAL_USER_DATA = { gender: '', age: '', weight: '', height: '' };
         const INITIAL_STATE = {
             step: Step.INSTRUCTIONS,
             loadingState: LoadingState.IDLE,
-            loadingMessage: 'Iniciando análisis...',
-            loadingSubMessage: 'ESPERANDO DATOS',
+            loadingMessage: '',
+            loadingSubMessage: '',
             userData: INITIAL_USER_DATA,
             previewImage: DEFAULT_IMAGES.default,
+            userImageUrl: null,
+            resultImage: null,
+            recommendedSize: null,
+            errorMessage: null,
+            userFile: null,
         };
 
         const App = () => {
@@ -493,12 +495,14 @@
             const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
             const updateUserData = (updates) => setState((prev) => ({ ...prev, userData: { ...prev.userData, ...updates } }));
 
+            // Subir foto - solo preview local, sube a API después
             const handleUpload = (file) => {
-                updateState({ loadingState: LoadingState.UPLOADING, loadingMessage: 'Procesando Imagen', loadingSubMessage: 'ANALIZANDO GEOMETRÍA' });
                 const objectUrl = URL.createObjectURL(file);
-                setTimeout(() => {
-                    updateState({ loadingState: LoadingState.IDLE, step: Step.CONFIRMATION, previewImage: objectUrl });
-                }, 2000);
+                updateState({ 
+                    previewImage: objectUrl, 
+                    userFile: file,
+                    step: Step.CONFIRMATION 
+                });
             };
 
             const handleReset = () => setState(INITIAL_STATE);
@@ -523,18 +527,48 @@
                 }
             };
 
-            const handleAnalyze = () => {
-                const messages = ['Escaneando biometría...', 'Mapeando puntos clave...', 'Calculando ajuste...', 'Finalizando...'];
-                let msgIndex = 0;
-                updateState({ loadingState: LoadingState.ANALYZING, loadingMessage: messages[0], loadingSubMessage: 'INTELIGENCIA ARTIFICIAL' });
-                const interval = setInterval(() => {
-                    msgIndex++;
-                    if (msgIndex < messages.length) updateState({ loadingMessage: messages[msgIndex] });
-                }, 1000);
-                setTimeout(() => {
-                    clearInterval(interval);
-                    updateState({ loadingState: LoadingState.IDLE, step: Step.RESULT, previewImage: DEFAULT_IMAGES.result });
-                }, 4500);
+            // Procesar con IA - llamadas reales a la API
+            const handleAnalyze = async () => {
+                try {
+                    // Paso 1: Subir imagen del usuario
+                    updateState({ 
+                        loadingState: LoadingState.UPLOADING, 
+                        loadingMessage: 'Subiendo imagen...', 
+                        loadingSubMessage: 'PROCESANDO ARCHIVO' 
+                    });
+
+                    const userImageUrl = await uploadUserPhoto(state.userFile);
+
+                    // Paso 2: Procesar con IA
+                    updateState({ 
+                        loadingState: LoadingState.ANALYZING, 
+                        loadingMessage: 'Analizando con IA...', 
+                        loadingSubMessage: 'CALCULANDO TALLE IDEAL',
+                        userImageUrl: userImageUrl
+                    });
+
+                    const result = await processWithAI(userImageUrl);
+
+                    // Guardar uso en localStorage
+                    saveUsageToLocalStorage(result.result_image_url);
+
+                    // Mostrar resultado
+                    updateState({ 
+                        loadingState: LoadingState.IDLE, 
+                        step: Step.RESULT, 
+                        resultImage: result.result_image_url,
+                        previewImage: result.result_image_url,
+                        recommendedSize: result.recommended_size || 'L'
+                    });
+
+                } catch (error) {
+                    console.error('Error en análisis:', error);
+                    updateState({ 
+                        loadingState: LoadingState.IDLE, 
+                        step: Step.ERROR,
+                        errorMessage: error.message || 'Ocurrió un error inesperado'
+                    });
+                }
             };
 
             const isInstructionStep = state.step === Step.INSTRUCTIONS;
@@ -550,7 +584,10 @@
                         loadingMessage={state.loadingMessage}
                         loadingSubMessage={state.loadingSubMessage}
                         userData={state.userData}
-                        previewImage={state.previewImage}
+                        productImage={CONFIG.productImage}
+                        resultImage={state.resultImage}
+                        recommendedSize={state.recommendedSize}
+                        errorMessage={state.errorMessage}
                         onUpload={handleUpload}
                         onReset={handleReset}
                         onUpdateUser={updateUserData}

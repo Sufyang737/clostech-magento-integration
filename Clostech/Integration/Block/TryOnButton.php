@@ -59,6 +59,14 @@ class TryOnButton extends Template
             \Magento\Store\Model\ScopeInterface::SCOPE_STORE
         );
     }
+
+    public function getApiKey(): ?string
+    {
+        return $this->scopeConfig->getValue(
+            'clostech/integration/api_key',
+            \Magento\Store\Model\ScopeInterface::SCOPE_STORE
+        );
+    }
     
     
     // obtiene la URL de la imagen del producto
