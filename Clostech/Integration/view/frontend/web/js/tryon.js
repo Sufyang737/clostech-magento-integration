@@ -16,7 +16,7 @@ define([
         const $modalProductName = $('#modal-product-name');
 
         // url de la API de Clostech
-        const CLOSTECH_API_URL = 'https://identic-keenan-nonvalorous.ngrok-free.dev';
+        const CLOSTECH_API_URL = 'https://portal-empresa.clostech.tech';
 
         // Obtener datos del producto desde el botón
         const productId = $button.data('product-id');
