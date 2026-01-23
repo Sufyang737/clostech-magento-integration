@@ -99,6 +99,7 @@
                 productImage: params.get('product_image') || null,
                 storeId: params.get('store_id') || null,
                 apiKey: params.get('api_key') || null,
+                clientId: params.get('client_id') || null,
             };
         };
 
@@ -132,6 +133,7 @@
                 body: JSON.stringify({
                     api_key: CONFIG.apiKey,
                     store_id: CONFIG.storeId,
+                    client_id: CONFIG.clientId,  // <- AGREGAR
                     product_id: CONFIG.productId,
                     variant_id: null,
                     variant_values: null,
@@ -142,10 +144,17 @@
 
             if (!response.ok) throw new Error('Error en el procesamiento de IA');
             
-            const data = await response.json();
-            if (!data.result_image_url) throw new Error('No se recibió resultado de IA');
+            const apiResponse = await response.json();
             
-            return data;
+            // Transformar respuesta de API al formato esperado
+            if (!apiResponse.success || !apiResponse.data?.generated_image_url) {
+                throw new Error('No se recibió resultado de IA');
+            }
+            
+            return {
+                result_image_url: apiResponse.data.generated_image_url,
+                recommended_size: 'L' // Por defecto
+            };
         };
 
         const saveUsageToLocalStorage = (resultImageUrl) => {
