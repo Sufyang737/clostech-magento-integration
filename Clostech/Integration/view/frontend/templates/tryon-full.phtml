@@ -110,21 +110,21 @@
         // API FUNCTIONS
         // =====================================================================
         const uploadUserPhoto = async (file) => {
-        const formData = new FormData();
-        formData.append('file', file);
+            const formData = new FormData();
+            formData.append('file', file);
 
-        const response = await fetch(`${CLOSTECH_API_URL}/api/upload-image`, {
-            method: 'POST',
-            body: formData,
-        });
+            const response = await fetch(`${CLOSTECH_API_URL}/api/upload-image`, {
+                method: 'POST',
+                body: formData,
+            });
 
-        if (!response.ok) throw new Error('Error al subir la imagen');
-        
-        const data = await response.json();
-        if (!data.url) throw new Error('No se recibió URL de imagen');
-        
-        return data.url;
-    };
+            if (!response.ok) throw new Error('Error al subir la imagen');
+            
+            const data = await response.json();
+            if (!data.url) throw new Error('No se recibió URL de imagen');
+            
+            return data.url;
+        };
 
         const processWithAI = async (userImageUrl) => {
             const response = await fetch(`${CLOSTECH_API_URL}/api/ai-v2`, {
@@ -133,7 +133,7 @@
                 body: JSON.stringify({
                     api_key: CONFIG.apiKey,
                     store_id: CONFIG.storeId,
-                    client_id: CONFIG.clientId,  // <- AGREGAR
+                    client_id: CONFIG.clientId,
                     product_id: CONFIG.productId,
                     variant_id: null,
                     variant_values: null,
@@ -168,6 +168,34 @@
             };
             localStorage.setItem(`clostech_tryon_${CONFIG.productId}`, JSON.stringify(tryOnData));
             localStorage.setItem('use_clostech', 'true');
+        };
+
+        // Obtener form_key de Magento para CSRF protection
+        const getFormKey = () => {
+            const formKeyInput = window.parent.document.querySelector('input[name="form_key"]');
+            return formKeyInput ? formKeyInput.value : null;
+        };
+
+        // Agregar producto al carrito
+        const addToCart = async (productId, size) => {
+            const formKey = getFormKey();
+            if (!formKey) throw new Error('No se pudo obtener el form_key');
+
+            const formData = new FormData();
+            formData.append('product', productId);
+            formData.append('qty', '1');
+            formData.append('form_key', formKey);
+            // Si tienes opciones de talla configuradas en Magento, agrégalas aquí
+            // formData.append('options[OPTION_ID]', size);
+
+            const response = await fetch('/checkout/cart/add', {
+                method: 'POST',
+                body: formData,
+                credentials: 'same-origin'
+            });
+
+            if (!response.ok) throw new Error('Error al agregar al carrito');
+            return response;
         };
 
         // =====================================================================
@@ -363,11 +391,27 @@
         const Result = ({ userData, resultImage, recommendedSize, onReset }) => {
             const [selectedSize, setSelectedSize] = useState(recommendedSize || 'L');
             const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+            const [isAdding, setIsAdding] = useState(false);
 
             const titles = userData.gender === 'male'
                 ? ['Te queda impecable', 'Ajuste Perfecto', 'Gran Estilo']
                 : ['Estás radiante', 'Te queda divino', 'Silueta Perfecta'];
             const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+
+            const handleAddToCart = async () => {
+                try {
+                    setIsAdding(true);
+                    await addToCart(CONFIG.productId, selectedSize);
+                    // Cerrar el modal
+                    window.parent.document.getElementById('clostech-modal').style.display = 'none';
+                    // Magento mostrará automáticamente su mensaje de éxito
+                } catch (error) {
+                    console.error('Error agregando al carrito:', error);
+                    alert('Error al agregar al carrito. Por favor, intenta de nuevo.');
+                } finally {
+                    setIsAdding(false);
+                }
+            };
 
             const handleWhatsapp = () => {
                 const text = `¡Mira cómo me queda esta prenda! Mi talla ideal es ${selectedSize} según Clostech AI.`;
@@ -423,9 +467,13 @@
 
                     <div className="mt-8">
                         <div className="grid grid-cols-[1fr_auto_auto] gap-3 mb-4">
-                            <button className="flex items-center justify-center gap-3 bg-black text-white p-5 text-sm uppercase tracking-widest font-medium hover:bg-zinc-800 transition-colors shadow-sm active:transform active:scale-[0.99]">
+                            <button 
+                                onClick={handleAddToCart}
+                                disabled={isAdding}
+                                className="flex items-center justify-center gap-3 bg-black text-white p-5 text-sm uppercase tracking-widest font-medium hover:bg-zinc-800 transition-colors shadow-sm active:transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
                                 <ShoppingBag size={18} />
-                                <span>Añadir {selectedSize}</span>
+                                <span>{isAdding ? 'Agregando...' : `Añadir ${selectedSize}`}</span>
                             </button>
                             <button onClick={handleWhatsapp} className="w-[60px] bg-white border border-gray-200 flex items-center justify-center hover:border-[#25d366] hover:text-[#25d366] transition-colors">
                                 <MessageCircle size={20} />
