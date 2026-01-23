@@ -276,6 +276,6 @@ class StoreValidation implements StoreValidationInterface
      */
     private function getClostechUrl(): string
     {
-        return 'https://identic-keenan-nonvalorous.ngrok-free.dev';
+        return 'https://portal-empresa.clostech.tech';
     }
 }
