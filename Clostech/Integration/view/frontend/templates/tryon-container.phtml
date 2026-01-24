@@ -7,6 +7,8 @@ $productImage = $block->getProductImageUrl();
 $storeId = $block->getStoreId();
 $apiKey = $block->getApiKey();
 $clientId = $block->getClientId();
+$configurations = $block->getProductConfigurationsJson();
+$options = $block->getProductOptionsJson();  // <- AGREGAR ESTA LÍNEA
 
 $iframeParams = http_build_query([
     'product_id' => $productId,
@@ -15,7 +17,9 @@ $iframeParams = http_build_query([
     'product_image' => $productImage,
     'store_id' => $storeId,
     'api_key' => $apiKey,
-    'client_id' => $clientId
+    'client_id' => $clientId,
+    'configurations' => $configurations,
+    'options' => $options  // <- AGREGAR ESTA LÍNEA
 ]);
 ?>
 

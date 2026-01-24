@@ -100,6 +100,8 @@
                 storeId: params.get('store_id') || null,
                 apiKey: params.get('api_key') || null,
                 clientId: params.get('client_id') || null,
+                configurations: JSON.parse(params.get('configurations') || '{}'),
+                options: JSON.parse(params.get('options') || '{"sizes":[],"colors":[]}')
             };
         };
 
@@ -177,16 +179,31 @@
         };
 
         // Agregar producto al carrito
-        const addToCart = async (productId, size) => {
+        const addToCart = async (productId, size, color) => {
+            // Si hay configuraciones, buscar el producto hijo
+            let finalProductId = productId;
+            
+            if (Object.keys(CONFIG.configurations).length > 0) {
+                // Producto configurable - buscar hijo
+                const key = `${size}-${color}`;
+                const childId = CONFIG.configurations[key];
+                
+                if (childId) {
+                    finalProductId = childId;
+                    console.log(`Producto configurable: usando hijo ${childId} para ${key}`);
+                } else {
+                    console.warn(`No se encontró producto hijo para ${key}`, CONFIG.configurations);
+                    throw new Error(`No hay stock disponible para ${size}-${color}`);
+                }
+            }
+            
             const formKey = getFormKey();
             if (!formKey) throw new Error('No se pudo obtener el form_key');
 
             const formData = new FormData();
-            formData.append('product', productId);
+            formData.append('product', finalProductId);
             formData.append('qty', '1');
             formData.append('form_key', formKey);
-            // Si tienes opciones de talla configuradas en Magento, agrégalas aquí
-            // formData.append('options[OPTION_ID]', size);
 
             const response = await fetch('/checkout/cart/add', {
                 method: 'POST',
@@ -385,12 +402,13 @@
             );
         };
 
-        const SIZES = ['M', 'L', 'XL'];
-        const COLORS = ['#1a1a1a', '#e8e0d5', '#4a5568'];
+        // Obtener sizes y colors dinámicamente de CONFIG
+        const SIZES = CONFIG.options.sizes.length > 0 ? CONFIG.options.sizes : ['M', 'L', 'XL'];
+        const COLORS = CONFIG.options.colors.length > 0 ? CONFIG.options.colors : ['Black', 'Gray', 'Green'];
 
         const Result = ({ userData, resultImage, recommendedSize, onReset }) => {
-            const [selectedSize, setSelectedSize] = useState(recommendedSize || 'L');
-            const [selectedColor, setSelectedColor] = useState(COLORS[0]);
+            const [selectedSize, setSelectedSize] = useState(recommendedSize || SIZES[1] || 'L');
+            const [selectedColor, setSelectedColor] = useState(COLORS[0] || 'Black');
             const [isAdding, setIsAdding] = useState(false);
 
             const titles = userData.gender === 'male'
@@ -401,7 +419,8 @@
             const handleAddToCart = async () => {
                 try {
                     setIsAdding(true);
-                    await addToCart(CONFIG.productId, selectedSize);
+                    // Pasar size Y color
+                    await addToCart(CONFIG.productId, selectedSize, selectedColor);
                     // Cerrar el modal
                     window.parent.document.getElementById('clostech-modal').style.display = 'none';
                     // Magento mostrará automáticamente su mensaje de éxito
@@ -419,8 +438,11 @@
             };
 
             const getLabel = (size) => {
+                const sizeIndex = SIZES.indexOf(size);
+                const recommendedIndex = SIZES.indexOf(recommendedSize);
+                
                 if (size === recommendedSize) return 'Ideal';
-                if (SIZES.indexOf(size) < SIZES.indexOf(recommendedSize)) return 'Ajustado';
+                if (sizeIndex < recommendedIndex) return 'Ajustado';
                 return 'Suelto';
             };
 
@@ -457,11 +479,15 @@
                     </div>
 
                     <div className="text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-4">Variantes</div>
-                    <div className="flex gap-4 mb-auto">
+                    <div className="flex gap-4 mb-auto flex-wrap">
                         {COLORS.map((color) => (
-                            <button key={color} onClick={() => setSelectedColor(color)}
-                                className={`w-10 h-10 rounded-full border border-gray-200 relative transition-all duration-300 hover:scale-105 hover:shadow-md ${selectedColor === color ? 'ring-1 ring-offset-4 ring-black shadow-sm' : 'opacity-80 hover:opacity-100'}`}
-                                style={{ backgroundColor: color }} />
+                            <button 
+                                key={color} 
+                                onClick={() => setSelectedColor(color)}
+                                className={`px-4 py-2 border border-gray-200 rounded transition-all duration-300 hover:scale-105 hover:shadow-md text-xs uppercase tracking-wider ${selectedColor === color ? 'bg-black text-white border-black' : 'bg-white text-black hover:border-gray-400'}`}
+                            >
+                                {color}
+                            </button>
                         ))}
                     </div>
 
@@ -615,7 +641,7 @@
                         step: Step.RESULT, 
                         resultImage: result.result_image_url,
                         previewImage: result.result_image_url,
-                        recommendedSize: result.recommended_size || 'L'
+                        recommendedSize: result.recommended_size || SIZES[1] || 'L'
                     });
 
                 } catch (error) {
