@@ -437,11 +437,11 @@
             const handleAddToCart = async () => {
                 try {
                     setIsAdding(true);
-                    // Pasar size Y color
                     await addToCart(CONFIG.productId, selectedSize, selectedColor);
                     // Cerrar el modal
                     window.parent.document.getElementById('clostech-modal').style.display = 'none';
-                    // Magento mostrará automáticamente su mensaje de éxito
+                    // Recargar para mostrar notificación y actualizar carrito
+                    window.parent.location.reload();
                 } catch (error) {
                     console.error('Error agregando al carrito:', error);
                     alert('Error al agregar al carrito. Por favor, intenta de nuevo.');
