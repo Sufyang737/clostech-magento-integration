@@ -404,11 +404,29 @@
 
         // Obtener sizes y colors dinámicamente de CONFIG
         const SIZES = CONFIG.options.sizes.length > 0 ? CONFIG.options.sizes : ['M', 'L', 'XL'];
-        const COLORS = CONFIG.options.colors.length > 0 ? CONFIG.options.colors : ['Black', 'Gray', 'Green'];
+
+        // Mapear nombres de colores a valores hex
+        const colorMap = {
+            'Black': '#1a1a1a',
+            'Gray': '#808080', 
+            'Green': '#22c55e',
+            'Blue': '#3b82f6',
+            'Red': '#ef4444',
+            'White': '#ffffff',
+            'Yellow': '#fbbf24',
+            'Orange': '#f97316',
+            'Purple': '#a855f7'
+        };
+
+        const COLORS_NAMES = CONFIG.options.colors.length > 0 ? CONFIG.options.colors : ['Black', 'Gray', 'Green'];
+        const COLORS = COLORS_NAMES.map(name => ({ 
+            name, 
+            hex: colorMap[name] || '#999999' 
+        }));
 
         const Result = ({ userData, resultImage, recommendedSize, onReset }) => {
             const [selectedSize, setSelectedSize] = useState(recommendedSize || SIZES[1] || 'L');
-            const [selectedColor, setSelectedColor] = useState(COLORS[0] || 'Black');
+            const [selectedColor, setSelectedColor] = useState(COLORS[0]?.name || 'Black');
             const [isAdding, setIsAdding] = useState(false);
 
             const titles = userData.gender === 'male'
@@ -479,15 +497,15 @@
                     </div>
 
                     <div className="text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-4">Variantes</div>
-                    <div className="flex gap-4 mb-auto flex-wrap">
+                    <div className="flex gap-4 mb-auto">
                         {COLORS.map((color) => (
                             <button 
-                                key={color} 
-                                onClick={() => setSelectedColor(color)}
-                                className={`px-4 py-2 border border-gray-200 rounded transition-all duration-300 hover:scale-105 hover:shadow-md text-xs uppercase tracking-wider ${selectedColor === color ? 'bg-black text-white border-black' : 'bg-white text-black hover:border-gray-400'}`}
-                            >
-                                {color}
-                            </button>
+                                key={color.name} 
+                                onClick={() => setSelectedColor(color.name)}
+                                className={`w-10 h-10 rounded-full border-2 border-gray-200 relative transition-all duration-300 hover:scale-105 hover:shadow-md ${selectedColor === color.name ? 'ring-2 ring-offset-2 ring-black shadow-lg' : 'opacity-80 hover:opacity-100'}`}
+                                style={{ backgroundColor: color.hex }}
+                                title={color.name}
+                            />
                         ))}
                     </div>
 
@@ -612,7 +630,7 @@
 
             // Procesar con IA - llamadas reales a la API
             const handleAnalyze = async () => {
-
+                // HACK TEMPORAL - SALTAR IA (CLOSTECH CAÍDO)
                 updateState({ 
                     loadingState: LoadingState.IDLE, 
                     step: Step.RESULT, 
