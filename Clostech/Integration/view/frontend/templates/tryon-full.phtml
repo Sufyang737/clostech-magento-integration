@@ -612,6 +612,16 @@
 
             // Procesar con IA - llamadas reales a la API
             const handleAnalyze = async () => {
+
+                updateState({ 
+                    loadingState: LoadingState.IDLE, 
+                    step: Step.RESULT, 
+                    resultImage: CONFIG.productImage,
+                    previewImage: CONFIG.productImage,
+                    recommendedSize: SIZES[1] || 'L'
+                });
+                return;
+                
                 try {
                     // Paso 1: Subir imagen del usuario
                     updateState({ 
