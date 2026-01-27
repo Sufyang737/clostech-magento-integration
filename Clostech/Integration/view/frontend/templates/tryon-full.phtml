@@ -438,8 +438,14 @@
                 try {
                     setIsAdding(true);
                     await addToCart(CONFIG.productId, selectedSize, selectedColor);
+                    
+                    // Invalidar las secciones de Magento para forzar recarga del mini-cart
+                    window.parent.localStorage.removeItem('mage-cache-storage');
+                    window.parent.localStorage.removeItem('mage-cache-storage-section-invalidation');
+                    
                     // Cerrar el modal
                     window.parent.document.getElementById('clostech-modal').style.display = 'none';
+                    
                     // Recargar para mostrar notificación y actualizar carrito
                     window.parent.location.reload();
                 } catch (error) {
