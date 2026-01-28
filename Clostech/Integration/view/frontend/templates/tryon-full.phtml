@@ -180,10 +180,10 @@
 
         // Agregar producto al carrito
         const addToCart = async (productId, size, color) => {
-            // Si hay configuraciones, buscar el producto hijo
+            // Si hay configuraciones Y se proporcionaron size/color, buscar el producto hijo
             let finalProductId = productId;
             
-            if (Object.keys(CONFIG.configurations).length > 0) {
+            if (size && color && Object.keys(CONFIG.configurations).length > 0) {
                 // Producto configurable - buscar hijo
                 const key = `${size}-${color}`;
                 const childId = CONFIG.configurations[key];
@@ -195,6 +195,9 @@
                     console.warn(`No se encontró producto hijo para ${key}`, CONFIG.configurations);
                     throw new Error(`No hay stock disponible para ${size}-${color}`);
                 }
+            } else {
+                // Producto simple
+                console.log(`Producto simple: agregando directamente ${productId}`);
             }
             
             const formKey = getFormKey();
@@ -425,6 +428,11 @@
         }));
 
         const Result = ({ userData, resultImage, recommendedSize, onReset }) => {
+            // Detectar si es producto simple (sin configuraciones)
+            const isSimpleProduct = Object.keys(CONFIG.configurations).length === 0 && 
+                                CONFIG.options.sizes.length === 0 && 
+                                CONFIG.options.colors.length === 0;
+            
             const [selectedSize, setSelectedSize] = useState(recommendedSize || SIZES[1] || 'L');
             const [selectedColor, setSelectedColor] = useState(COLORS[0]?.name || 'Black');
             const [isAdding, setIsAdding] = useState(false);
@@ -437,7 +445,13 @@
             const handleAddToCart = async () => {
                 try {
                     setIsAdding(true);
-                    await addToCart(CONFIG.productId, selectedSize, selectedColor);
+                    
+                    // Para productos simples, no enviar size/color
+                    if (isSimpleProduct) {
+                        await addToCart(CONFIG.productId, null, null);
+                    } else {
+                        await addToCart(CONFIG.productId, selectedSize, selectedColor);
+                    }
                     
                     // Invalidar las secciones de Magento para forzar recarga del mini-cart
                     window.parent.localStorage.removeItem('mage-cache-storage');
@@ -636,15 +650,6 @@
 
             // Procesar con IA - llamadas reales a la API
             const handleAnalyze = async () => {
-                // HACK TEMPORAL - SALTAR IA (CLOSTECH CAÍDO)
-                updateState({ 
-                    loadingState: LoadingState.IDLE, 
-                    step: Step.RESULT, 
-                    resultImage: CONFIG.productImage,
-                    previewImage: CONFIG.productImage,
-                    recommendedSize: SIZES[1] || 'L'
-                });
-                return;
                 
                 try {
                     // Paso 1: Subir imagen del usuario
