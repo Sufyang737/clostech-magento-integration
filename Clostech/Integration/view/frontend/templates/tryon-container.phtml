@@ -1,23 +1,4 @@
 <?php
-/**
- * DEBUG - BORRAR DESPUÉS
- */
-$parent = $block->getParentBlock();
-if ($parent) {
-    echo "<div style='background:yellow; padding:10px; margin:10px 0; border:2px solid red;'>";
-    echo "<strong>DEBUG INFO:</strong><br>";
-    echo "Parent block: " . $parent->getNameInLayout() . "<br>";
-    echo "<strong>Children in order:</strong><br>";
-    $children = $parent->getChildNames();
-    foreach ($children as $childName) {
-        echo "- " . $childName . "<br>";
-    }
-    echo "<strong>My name:</strong> clostech.tryon.app<br>";
-    echo "</div>";
-}
-?>
-
-<?php
 /** @var \Clostech\Integration\Block\TryOnButton $block */
 $productId = $block->getCurrentProductId();
 $productSku = $block->getCurrentProductSku();
