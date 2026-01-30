@@ -7,7 +7,7 @@
             <block class="Clostech\Integration\Block\TryOnButton"
                    name="clostech.tryon.app" 
                    template="Clostech_Integration::tryon-container.phtml"
-                   after="product.info.price"/>
+                   before="product.info.addtocart.additional"/>
         </referenceContainer>
     </body>
 </page>
