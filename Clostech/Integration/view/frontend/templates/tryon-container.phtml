@@ -1,4 +1,20 @@
 <?php
+/**
+ * DEBUG - BORRAR DESPUÉS
+ */
+$parent = $block->getParentBlock();
+if ($parent) {
+    echo "<!-- DEBUG: Parent block = " . $parent->getNameInLayout() . " -->\n";
+    $children = $parent->getChildNames();
+    echo "<!-- DEBUG: Children in order: -->\n";
+    foreach ($children as $childName) {
+        echo "<!-- DEBUG:   - " . $childName . " -->\n";
+    }
+    echo "<!-- DEBUG: My name = clostech.tryon.app -->\n";
+}
+?>
+
+<?php
 /** @var \Clostech\Integration\Block\TryOnButton $block */
 $productId = $block->getCurrentProductId();
 $productSku = $block->getCurrentProductSku();
