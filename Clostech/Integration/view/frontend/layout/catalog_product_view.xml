@@ -3,11 +3,11 @@
       xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
     
     <body>
-        <referenceContainer name="product.info.main">
+        <referenceContainer name="product.info.form.content">
             <block class="Clostech\Integration\Block\TryOnButton"
                    name="clostech.tryon.app" 
                    template="Clostech_Integration::tryon-container.phtml"
-                   before="product.info.addtocart.additional"/>
+                   before="product.info.addtocart"/>
         </referenceContainer>
     </body>
 </page>
