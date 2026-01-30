@@ -5,7 +5,7 @@
                                     <!--ACA REGISTRAMOS LOS ENDPOINTS-->
     <!-- endpoint para obtener los productos de la tienda.
         Ej: Cuando llame a ese endpoint/url, se ejecuta el metodo 'getList'
-        de la clase ProductListInterface  
+        de la interfaz ProductListInterface  
     -->
     <route url="/V1/clostech/products" method="GET">
         <service class="Clostech\Integration\Api\ProductListInterface" method="getList"/>

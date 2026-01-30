@@ -80,7 +80,7 @@ class OrderPlaceAfter implements ObserverInterface
             $clostechUrl = $this->getClostechUrl();
             $endpoint = $clostechUrl . '/api/orders';
             
-            $this->logger->info('📦 Enviando orden a Clostech:', [
+            $this->logger->info('Enviando orden a Clostech:', [
                 'data' => $data,
                 'endpoint' => $endpoint
             ]);
@@ -108,6 +108,6 @@ class OrderPlaceAfter implements ObserverInterface
 
     private function getClostechUrl(): string
     {
-        return 'https://identic-keenan-nonvalorous.ngrok-free.dev';
+        return 'https://portal-empresa.clostech.tech';
     }
 }
