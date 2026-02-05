@@ -105,8 +105,28 @@ class StoreValidation implements StoreValidationInterface
                     ];
                 }
                 
-                // recibimos una api_key y un client_id de Clostech en base al storeId
-                $credentials = $this->getApiCredentials($storeId);
+                // Retry logic: intenta obtener credenciales con delay
+                $credentials = ['success' => false];
+                $maxAttempts = 5;
+                $delaySeconds = 2;
+                
+                for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
+                    $this->logger->info("Intento {$attempt} de {$maxAttempts} para obtener credenciales");
+                    
+                    // Espera antes de cada intento (excepto el primero)
+                    if ($attempt > 1) {
+                        sleep($delaySeconds);
+                    }
+                    
+                    $credentials = $this->getApiCredentials($storeId);
+                    
+                    if ($credentials['success']) {
+                        $this->logger->info("Credenciales obtenidas exitosamente en intento {$attempt}");
+                        break;
+                    }
+                    
+                    $this->logger->warning("Intento {$attempt} fallido, reintentando...");
+                }
                 
                 if ($credentials['success']) {
                     // si las credenciales se generaron y se recibieron con exito, se guardan en la config de la store
@@ -129,7 +149,7 @@ class StoreValidation implements StoreValidationInterface
                         'client_id' => $credentials['client_id']
                     ]);
                 } else {
-                    $this->logger->warning('No se pudieron recuperar las credenciales de la API de Clostech');
+                    $this->logger->warning('No se pudieron recuperar las credenciales de la API de Clostech después de ' . $maxAttempts . ' intentos');
                 }
             }
             
