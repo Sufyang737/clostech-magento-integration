@@ -4,12 +4,12 @@
 // los cuales se almacenan en la config de la tienda junto al store_id
 namespace Clostech\Integration\Model;
 
-use Clostech\Integration\Api\StoreValidationInterface; // contrato que implementa
-use Clostech\Integration\Helper\StoreValidator; // funciones
-use Psr\Log\LoggerInterface; // para escribir logs
-use Magento\Framework\HTTP\Client\Curl; // para hacer peticiones a clostech
-use Magento\Framework\App\Config\ScopeConfigInterface; // para leer la config de la tienda
-use Magento\Framework\App\Config\Storage\WriterInterface; // para escribir en la config
+use Clostech\Integration\Api\StoreValidationInterface;
+use Clostech\Integration\Helper\StoreValidator;
+use Psr\Log\LoggerInterface;
+use Magento\Framework\HTTP\Client\Curl;
+use Magento\Framework\App\Config\ScopeConfigInterface;
+use Magento\Framework\App\Config\Storage\WriterInterface;
 
 class StoreValidation implements StoreValidationInterface
 {
@@ -33,12 +33,9 @@ class StoreValidation implements StoreValidationInterface
         $this->configWriter = $configWriter;
     }
     
-    // valida, genera el storeId único (sólo si la tienda no tiene uno) 
-    // y lo almacena en la config de la tienda
     public function validate(string $domain)
     {
         try {
-            
             $isValid = $this->storeValidator->validateStore($domain);
             
             if (!$isValid) {
@@ -50,7 +47,6 @@ class StoreValidation implements StoreValidationInterface
                 ];
             }
             
-            // verifica si ya existe un storeId en la config de la tienda
             $existingStoreId = $this->scopeConfig->getValue(
                 'clostech/integration/store_id',
                 \Magento\Store\Model\ScopeInterface::SCOPE_STORE
@@ -63,10 +59,8 @@ class StoreValidation implements StoreValidationInterface
                 
                 $storeId = $existingStoreId;
             } else {
-                // genera nuevo storeId solo si no existe
                 $storeId = $this->storeValidator->generateStoreId();
                 
-                // guarda el nuevo storeId en configuración
                 $this->configWriter->save(
                     'clostech/integration/store_id',
                     $storeId,
@@ -79,16 +73,12 @@ class StoreValidation implements StoreValidationInterface
                 ]);
             }
             
-            // obtiene la info de la tienda
             $storeInfo = $this->storeValidator->getStoreInformation();
             
-            // si el storeId es nuevo, sincronizamos con Clostech
-            // y se le pasa la info de la tienda
-            if (!$existingStoreId || $existingStoreId) {
-                // transforma los datos a como Clostech espera recibirlos (JSON object en lugar de ArrayIndexado)
+            // Solo sincronizar si es tienda nueva
+            if (!$existingStoreId) {
                 $clostechData = $this->storeValidator->formatDataForClostech($storeId, $storeInfo);
                 
-                // se envia la info a Clostech
                 $clostechResponse = $this->sendToClostech($clostechData);
                 
                 if (!$clostechResponse['success']) {
@@ -105,15 +95,14 @@ class StoreValidation implements StoreValidationInterface
                     ];
                 }
                 
-                // Retry logic: intenta obtener credenciales con delay
+                // Retry logic con nuevo objeto cURL
                 $credentials = ['success' => false];
                 $maxAttempts = 5;
-                $delaySeconds = 2;
+                $delaySeconds = 3;
                 
                 for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
                     $this->logger->info("Intento {$attempt} de {$maxAttempts} para obtener credenciales");
                     
-                    // Espera antes de cada intento (excepto el primero)
                     if ($attempt > 1) {
                         sleep($delaySeconds);
                     }
@@ -129,7 +118,6 @@ class StoreValidation implements StoreValidationInterface
                 }
                 
                 if ($credentials['success']) {
-                    // si las credenciales se generaron y se recibieron con exito, se guardan en la config de la store
                     $this->configWriter->save(
                         'clostech/integration/api_key',
                         $credentials['api_key'],
@@ -179,9 +167,6 @@ class StoreValidation implements StoreValidationInterface
         }
     }
     
-    /**
-     * Envía datos a Clostech
-     */
     private function sendToClostech(array $data): array
     {
         try {
@@ -241,38 +226,51 @@ class StoreValidation implements StoreValidationInterface
         }
     }
     
-    /**
-     * Obtiene API key y client_id de Clostech
-     */
     private function getApiCredentials(string $storeId): array
     {
         try {
             $clostechUrl = $this->getClostechUrl();
             $endpoint = $clostechUrl . '/api/apikeys/store';
             
-            $this->logger->info('Requesting API credentials from Clostech', [
+            // Crear NUEVA instancia de cURL para evitar conflictos
+            $curl = \Magento\Framework\App\ObjectManager::getInstance()
+                ->create(\Magento\Framework\HTTP\Client\Curl::class);
+            
+            $payload = ['store_id' => $storeId];
+            $jsonPayload = json_encode($payload);
+            
+            $this->logger->info('=== REQUEST DEBUG ===', [
                 'endpoint' => $endpoint,
-                'store_id' => $storeId
+                'payload_array' => $payload,
+                'payload_json' => $jsonPayload,
+                'payload_length' => strlen($jsonPayload)
             ]);
             
             // Configurar cURL
-            $this->curl->setOption(CURLOPT_RETURNTRANSFER, true);
-            $this->curl->setOption(CURLOPT_TIMEOUT, 30);
-            $this->curl->addHeader('Content-Type', 'application/json');
+            $curl->setOption(CURLOPT_RETURNTRANSFER, true);
+            $curl->setOption(CURLOPT_TIMEOUT, 30);
+            $curl->setOption(CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
             
             // Hacer POST
-            $this->curl->post($endpoint, json_encode(['store_id' => $storeId]));
+            $curl->post($endpoint, $jsonPayload);
             
-            $response = $this->curl->getBody();
-            $statusCode = $this->curl->getStatus();
+            $response = $curl->getBody();
+            $statusCode = $curl->getStatus();
             
-            $this->logger->info('API credentials response', [
+            $this->logger->info('=== RESPONSE DEBUG ===', [
                 'status' => $statusCode,
-                'response' => $response
+                'response' => $response,
+                'response_length' => strlen($response)
             ]);
             
             if ($statusCode >= 200 && $statusCode < 300) {
                 $data = json_decode($response, true);
+                
+                $this->logger->info('=== PARSED RESPONSE ===', [
+                    'parsed_data' => $data,
+                    'has_api_key' => isset($data['data']['api_key']),
+                    'has_client_id' => isset($data['data']['client']['id'])
+                ]);
                 
                 if (isset($data['data']['api_key']) && isset($data['data']['client']['id'])) {
                     return [
@@ -291,9 +289,6 @@ class StoreValidation implements StoreValidationInterface
         }
     }
     
-    /**
-     * Obtiene URL de Clostech
-     */
     private function getClostechUrl(): string
     {
         return 'https://portal-empresa.clostech.tech';
