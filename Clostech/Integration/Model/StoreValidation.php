@@ -232,9 +232,8 @@ class StoreValidation implements StoreValidationInterface
             $clostechUrl = $this->getClostechUrl();
             $endpoint = $clostechUrl . '/api/apikeys/store';
             
-            // Crear NUEVA instancia de cURL para evitar conflictos
-            $curl = \Magento\Framework\App\ObjectManager::getInstance()
-                ->create(\Magento\Framework\HTTP\Client\Curl::class);
+            // Usar la instancia inyectada
+            $curl = $this->curl;
             
             $payload = ['store_id' => $storeId];
             $jsonPayload = json_encode($payload);
@@ -246,12 +245,16 @@ class StoreValidation implements StoreValidationInterface
                 'payload_length' => strlen($jsonPayload)
             ]);
             
-            // Configurar cURL
-            $curl->setOption(CURLOPT_RETURNTRANSFER, true);
-            $curl->setOption(CURLOPT_TIMEOUT, 30);
-            $curl->setOption(CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
+            // Configurar con setOptions
+            $curl->setOptions([
+                CURLOPT_RETURNTRANSFER => true,
+                CURLOPT_TIMEOUT => 30,
+                CURLOPT_HTTPHEADER => [
+                    'Content-Type: application/json',
+                    'Accept: application/json'
+                ]
+            ]);
             
-            // Hacer POST
             $curl->post($endpoint, $jsonPayload);
             
             $response = $curl->getBody();
@@ -259,18 +262,11 @@ class StoreValidation implements StoreValidationInterface
             
             $this->logger->info('=== RESPONSE DEBUG ===', [
                 'status' => $statusCode,
-                'response' => $response,
-                'response_length' => strlen($response)
+                'response' => $response
             ]);
             
             if ($statusCode >= 200 && $statusCode < 300) {
                 $data = json_decode($response, true);
-                
-                $this->logger->info('=== PARSED RESPONSE ===', [
-                    'parsed_data' => $data,
-                    'has_api_key' => isset($data['data']['api_key']),
-                    'has_client_id' => isset($data['data']['client']['id'])
-                ]);
                 
                 if (isset($data['data']['api_key']) && isset($data['data']['client']['id'])) {
                     return [
