@@ -7,7 +7,7 @@ namespace Clostech\Integration\Model;
 use Clostech\Integration\Api\StoreValidationInterface;
 use Clostech\Integration\Helper\StoreValidator;
 use Psr\Log\LoggerInterface;
-use Magento\Framework\HTTP\Client\Curl;
+use Magento\Framework\HTTP\Client\CurlFactory;
 use Magento\Framework\App\Config\ScopeConfigInterface;
 use Magento\Framework\App\Config\Storage\WriterInterface;
 
@@ -15,20 +15,20 @@ class StoreValidation implements StoreValidationInterface
 {
     protected $storeValidator;
     protected $logger;
-    protected $curl;
+    protected $curlFactory;
     protected $scopeConfig;
     protected $configWriter;
     
     public function __construct(
         StoreValidator $storeValidator,
         LoggerInterface $logger,
-        Curl $curl,
+        CurlFactory $curlFactory,
         ScopeConfigInterface $scopeConfig,
         WriterInterface $configWriter
     ) {
         $this->storeValidator = $storeValidator;
         $this->logger = $logger;
-        $this->curl = $curl;
+        $this->curlFactory = $curlFactory;
         $this->scopeConfig = $scopeConfig;
         $this->configWriter = $configWriter;
     }
@@ -95,7 +95,7 @@ class StoreValidation implements StoreValidationInterface
                     ];
                 }
                 
-                // Retry logic con nuevo objeto cURL
+                // Retry logic con instancia cURL limpia en cada intento
                 $credentials = ['success' => false];
                 $maxAttempts = 5;
                 $delaySeconds = 3;
@@ -186,16 +186,17 @@ class StoreValidation implements StoreValidationInterface
             
             $endpoint = $clostechUrl . '/api/shopify/client_information';
             
-            // Configurar cURL
-            $this->curl->setOption(CURLOPT_RETURNTRANSFER, true);
-            $this->curl->setOption(CURLOPT_TIMEOUT, 30);
-            $this->curl->addHeader('Content-Type', 'application/json');
+            // Instancia limpia de cURL
+            $curl = $this->curlFactory->create();
             
-            // Hacer POST
-            $this->curl->post($endpoint, json_encode($data));
+            $curl->setOption(CURLOPT_RETURNTRANSFER, true);
+            $curl->setOption(CURLOPT_TIMEOUT, 30);
+            $curl->addHeader('Content-Type', 'application/json');
             
-            $response = $this->curl->getBody();
-            $statusCode = $this->curl->getStatus();
+            $curl->post($endpoint, json_encode($data));
+            
+            $response = $curl->getBody();
+            $statusCode = $curl->getStatus();
             
             $this->logger->info('Clostech API response', [
                 'status' => $statusCode,
@@ -232,8 +233,8 @@ class StoreValidation implements StoreValidationInterface
             $clostechUrl = $this->getClostechUrl();
             $endpoint = $clostechUrl . '/api/apikeys/store';
             
-            // Usar la instancia inyectada
-            $curl = $this->curl;
+            // Instancia limpia de cURL (sin contaminación del request anterior)
+            $curl = $this->curlFactory->create();
             
             $payload = ['store_id' => $storeId];
             $jsonPayload = json_encode($payload);
@@ -245,15 +246,10 @@ class StoreValidation implements StoreValidationInterface
                 'payload_length' => strlen($jsonPayload)
             ]);
             
-            // Configurar con setOptions
-            $curl->setOptions([
-                CURLOPT_RETURNTRANSFER => true,
-                CURLOPT_TIMEOUT => 30,
-                CURLOPT_HTTPHEADER => [
-                    'Content-Type: application/json',
-                    'Accept: application/json'
-                ]
-            ]);
+            $curl->setOption(CURLOPT_RETURNTRANSFER, true);
+            $curl->setOption(CURLOPT_TIMEOUT, 30);
+            $curl->addHeader('Content-Type', 'application/json');
+            $curl->addHeader('Accept', 'application/json');
             
             $curl->post($endpoint, $jsonPayload);
             
