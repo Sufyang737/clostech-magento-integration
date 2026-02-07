@@ -236,7 +236,8 @@ class StoreValidation implements StoreValidationInterface
             // Instancia limpia de cURL (sin contaminación del request anterior)
             $curl = $this->curlFactory->create();
             
-            $payload = ['store_id' => $storeId];
+            // FIX: Agregar espacio al inicio porque el backend de Clostech guarda así el store_id
+            $payload = ['store_id' => ' ' . $storeId];
             $jsonPayload = json_encode($payload);
             
             $this->logger->info('=== REQUEST DEBUG ===', [
