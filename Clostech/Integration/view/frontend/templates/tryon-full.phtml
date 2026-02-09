@@ -470,12 +470,13 @@
                         await addToCart(CONFIG.productId, selectedSize, selectedColor);
                     }
                     
-                    window.parent.localStorage.removeItem('mage-cache-storage');
-                    window.parent.localStorage.removeItem('mage-cache-storage-section-invalidation');
-                    
+                    // Invalidar y recargar el mini-cart usando el sistema nativo de Magento
+                    window.parent.require(['Magento_Customer/js/customer-data'], function(customerData) {
+                        customerData.invalidate(['cart']);
+                        customerData.reload(['cart'], true);
+                    });
+
                     window.parent.document.getElementById('clostech-modal').style.display = 'none';
-                    
-                    window.parent.location.reload();
                 } catch (error) {
                     console.error('Error agregando al carrito:', error);
                     alert('Error al agregar al carrito. Por favor, intenta de nuevo.');
