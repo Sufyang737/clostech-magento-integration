@@ -52,24 +52,10 @@
         .animate-fade-in { animation: fadeIn 0.6s ease forwards; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-        /* Mobile modal adjustments */
-        @media (max-width: 768px) {
-            .vm-mobile-img {
-                display: block !important;
-                width: 100%;
-                height: auto;
-                max-height: 350px;
-                object-fit: contain;
-                margin: 0 auto 20px auto;
-                border-radius: 8px;
-                background: #f8fafc;
-            }
-        }
     </style>
 </head>
 
-<body class="bg-white/95 text-[#111111] antialiased h-[100dvh] w-full overflow-hidden flex items-center justify-center p-5 md:p-5" style="backdrop-filter: blur(10px);">
+<body class="bg-[#f5f5f5] text-[#111111] antialiased h-[100dvh] w-full overflow-hidden flex items-center justify-center p-0 md:p-10">
 
     <!-- React Root -->
     <div id="root" class="w-full h-full flex items-center justify-center"></div>
@@ -162,13 +148,14 @@
             
             const apiResponse = await response.json();
             
+            // Transformar respuesta de API al formato esperado
             if (!apiResponse.success || !apiResponse.data?.generated_image_url) {
                 throw new Error('No se recibió resultado de IA');
             }
             
             return {
                 result_image_url: apiResponse.data.generated_image_url,
-                recommended_size: 'L'
+                recommended_size: 'L' // Por defecto
             };
         };
 
@@ -193,9 +180,11 @@
 
         // Agregar producto al carrito
         const addToCart = async (productId, size, color) => {
+            // Si hay configuraciones Y se proporcionaron size/color, buscar el producto hijo
             let finalProductId = productId;
             
             if (size && color && Object.keys(CONFIG.configurations).length > 0) {
+                // Producto configurable - buscar hijo
                 const key = `${size}-${color}`;
                 const childId = CONFIG.configurations[key];
                 
@@ -207,6 +196,7 @@
                     throw new Error(`No hay stock disponible para ${size}-${color}`);
                 }
             } else {
+                // Producto simple
                 console.log(`Producto simple: agregando directamente ${productId}`);
             }
             
@@ -259,18 +249,18 @@
         // =====================================================================
         const Loader = ({ message, subMessage }) => (
             <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in">
-                <div className="w-[50px] h-[50px] border border-black/10 border-t-black rounded-full mb-8" style={{ animation: 'spin 1s linear infinite' }} />
-                <div className="text-[0.9rem] font-semibold uppercase tracking-[0.15em] mb-2 text-black">{message}</div>
-                <div className="text-[0.75rem] font-mono text-[#888] min-h-[1.2em]">{subMessage}</div>
+                <div className="w-12 h-12 border border-black/10 border-t-black rounded-full mb-8" style={{ animation: 'spin 1s linear infinite' }} />
+                <div className="text-sm font-semibold uppercase tracking-[0.15em] mb-2 text-black">{message}</div>
+                <div className="text-xs font-mono text-gray-400">{subMessage}</div>
             </div>
         );
 
         const ErrorDisplay = ({ message, onRetry }) => (
             <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in p-8">
                 <AlertCircle className="w-16 h-16 text-red-500 mb-6" />
-                <h2 className="text-[2.5rem] font-light mb-4 text-black tracking-tight leading-tight">Ocurrió un error</h2>
-                <p className="text-[0.9rem] text-[#666] mb-8 max-w-md leading-relaxed">{message}</p>
-                <button onClick={onRetry} className="w-full bg-black text-white border border-black py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium hover:bg-[#333] transition-colors">
+                <h2 className="text-2xl font-light mb-4 text-black">Ocurrió un error</h2>
+                <p className="text-sm text-gray-500 mb-8 max-w-md">{message}</p>
+                <button onClick={onRetry} className="bg-black text-white px-8 py-4 text-sm uppercase tracking-widest hover:bg-zinc-800 transition-colors">
                     Intentar de nuevo
                 </button>
             </div>
@@ -281,29 +271,23 @@
             const isAnalyzing = loadingState === LoadingState.ANALYZING;
 
             return (
-                <section className="relative overflow-hidden flex items-center justify-center h-full w-full" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%)' }}>
-                    <div className={`absolute top-0 left-0 w-full h-1 bg-[#a78bfa] z-20 opacity-0 transition-opacity duration-300 ${isAnalyzing ? 'opacity-100 animate-scan' : ''}`} style={{ boxShadow: '0 0 15px #8b5cf6, 0 0 30px #7c3aed' }} />
+                <section className="relative bg-black overflow-hidden flex items-center justify-center h-[30vh] md:h-auto min-h-[300px] md:min-h-[650px] w-full">
+                    <div className={`absolute top-0 left-0 w-full h-1 bg-violet-400 shadow-[0_0_15px_#8b5cf6,0_0_30px_#7c3aed] z-20 opacity-0 transition-opacity duration-300 ${isAnalyzing ? 'opacity-100 animate-scan' : ''}`} />
                     <div className={`absolute inset-0 z-10 opacity-0 transition-opacity duration-500 pointer-events-none ${isAnalyzing ? 'opacity-100' : ''}`}
                         style={{ backgroundImage: `linear-gradient(rgba(124, 58, 237, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(124, 58, 237, 0.1) 1px, transparent 1px)`, backgroundSize: '50px 50px' }} />
-                    {isAnalyzing && <div className="absolute inset-0 z-10 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(76, 29, 149, 0.3) 0%, rgba(124, 58, 237, 0.1) 100%)' }} />}
+                    {isAnalyzing && <div className="absolute inset-0 bg-gradient-to-b from-purple-900/30 to-violet-600/10 z-10 pointer-events-none" />}
                     {imageSrc ? (
-                        <img src={imageSrc} alt="Preview" className={`w-full h-full object-cover transition-all duration-500 ease-in-out
-                            ${isUploading ? 'blur-[15px] opacity-50 scale-110 grayscale' : ''}
-                            ${isAnalyzing ? 'grayscale contrast-125 brightness-75' : 'opacity-100'}`}
-                            style={isAnalyzing ? { mixBlendMode: 'luminosity' } : {}} />
+                        <img src={imageSrc} alt="Preview" className={`w-full h-full object-cover transition-all duration-700 ease-in-out
+                            ${isUploading ? 'blur-md opacity-50 scale-110 grayscale' : ''}
+                            ${isAnalyzing ? 'grayscale contrast-125 brightness-75 mix-blend-luminosity' : 'opacity-100'}`} />
                     ) : (
-                        <div className="w-full h-full flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #f8fafc 0%, #e5e7eb 100%)' }}>
-                            <span className="text-gray-400 text-sm uppercase tracking-widest">Sin imagen</span>
+                        <div className="w-full h-full bg-gray-900 flex items-center justify-center">
+                            <span className="text-gray-600 text-sm uppercase tracking-widest">Sin imagen</span>
                         </div>
                     )}
                 </section>
             );
         };
-
-        // Mobile visual image component (shown inline on mobile, hidden on desktop)
-        const MobileVisualImg = ({ src }) => (
-            <img src={src} alt="Visual" className="vm-mobile-img hidden md:!hidden w-full max-h-[350px] object-contain mx-auto mb-5 rounded-lg bg-[#f8fafc]" />
-        );
 
         const Instructions = ({ onUpload, productImage }) => {
             const fileInputRef = useRef(null);
@@ -312,62 +296,60 @@
             };
             return (
                 <div className="flex flex-col h-full md:justify-center">
-                    <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.2em] font-semibold text-[#999] mb-7">
+                    <div className="flex items-center gap-2 text-[10px] md:text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-3 md:mb-6">
                         <span className="w-1.5 h-1.5 bg-black rounded-full"></span>
                         Clostech
                     </div>
-                    <h2 className="text-[2.5rem] font-light leading-tight tracking-tight mb-5 text-black">Probador Virtual</h2>
-                    <MobileVisualImg src={productImage || DEFAULT_IMAGES.default} />
-                    <p className="text-[0.9rem] text-[#666] leading-relaxed mb-10 md:mb-14 max-w-[90%]">
+                    <h2 className="text-[2.5rem] md:text-[2.5rem] font-light leading-[0.9] tracking-tight mb-4 text-black">Probador Virtual</h2>
+                    <p className="text-xs md:text-sm text-gray-500 leading-relaxed mb-6 md:mb-8 max-w-[90%]">
                         Sube una foto y permite que nuestra IA analice tu morfología para encontrar el talle perfecto.
                     </p>
-                    <div className="flex gap-8 mb-10 md:mb-14">
+                    <div className="flex gap-4 md:gap-6 mb-6 md:mb-8">
                         <div className="flex-1">
-                            <Sun size={32} strokeWidth={1} className="mb-4 text-black" />
-                            <div className="text-[0.75rem] font-bold uppercase tracking-[0.05em] mb-1.5">Iluminación</div>
-                            <div className="text-[0.8rem] text-[#666] leading-snug">Luz natural frontal.</div>
+                            <Sun className="w-6 h-6 mb-2 text-black stroke-1" />
+                            <div className="text-[10px] font-bold uppercase tracking-wider mb-1">Iluminación</div>
+                            <div className="text-[10px] md:text-[11px] text-gray-500 leading-tight">Luz natural frontal.</div>
                         </div>
                         <div className="flex-1">
-                            <User size={32} strokeWidth={1} className="mb-4 text-black" />
-                            <div className="text-[0.75rem] font-bold uppercase tracking-[0.05em] mb-1.5">Posición</div>
-                            <div className="text-[0.8rem] text-[#666] leading-snug">Cuerpo entero frontal.</div>
+                            <User className="w-6 h-6 mb-2 text-black stroke-1" />
+                            <div className="text-[10px] font-bold uppercase tracking-wider mb-1">Posición</div>
+                            <div className="text-[10px] md:text-[11px] text-gray-500 leading-tight">Cuerpo entero.</div>
                         </div>
                     </div>
+                    {productImage && (
+                        <div className="md:hidden relative w-full aspect-[4/3] mb-6 rounded-sm overflow-hidden bg-gray-50 border border-gray-100 shadow-sm">
+                            <img src={productImage} alt="Producto" className="w-full h-full object-cover opacity-90" />
+                            <div className="absolute top-3 left-3 bg-white/90 backdrop-blur text-black text-[9px] px-2 py-1 rounded-sm uppercase tracking-widest font-bold shadow-sm border border-gray-200 z-10">Producto</div>
+                        </div>
+                    )}
                     <input type="file" hidden ref={fileInputRef} accept="image/*" onChange={handleFileChange} />
                     <div className="mt-auto md:mt-0 pt-2">
-                        <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full bg-black text-white border border-black py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium hover:bg-[#333] active:scale-[0.99] transition-all flex items-center justify-center gap-3">
+                        <button type="button" onClick={() => fileInputRef.current?.click()} className="w-full bg-black text-white border border-black p-5 text-xs md:text-sm uppercase tracking-[0.15em] font-medium hover:bg-zinc-800 active:scale-[0.98] transition-all flex items-center justify-center gap-3">
                             <UploadCloud size={18} />
                             Subir Foto
                         </button>
-                        <p className="text-center text-[0.7rem] text-[#999] mt-4">Privacidad asegurada.</p>
+                        <p className="text-center text-[0.65rem] text-gray-400 mt-4 md:pb-0">Privacidad asegurada · Procesamiento seguro</p>
                     </div>
                 </div>
             );
         };
 
-        const Confirmation = ({ onContinue, onChangePhoto, onChangeMeasurements }) => (
+        const Confirmation = ({ onContinue, onChangePhoto }) => (
             <div className="flex flex-col">
-                <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.2em] font-semibold text-[#999] mb-7">
+                <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-green-500 mb-6">
                     <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
                     Foto Recibida
                 </div>
-                <h2 className="text-[2.5rem] font-light leading-tight tracking-tight mb-5 text-black">Excelente Toma</h2>
-                <MobileVisualImg src={DEFAULT_IMAGES.default} />
+                <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-8 text-black">Excelente Toma</h2>
                 <div className="flex flex-col gap-4 mb-10">
-                    <div className="flex items-center gap-4 py-4 border-b border-[#f5f5f5]">
-                        <CheckCircle2 size={20} strokeWidth={1.5} className="text-black" />
-                        <span className="text-[0.9rem] font-medium text-[#111]">Iluminación</span>
-                        <span className="text-[0.8rem] text-[#888] font-mono ml-auto">100%</span>
-                    </div>
-                    <div className="flex items-center gap-4 py-4 border-b border-[#f5f5f5]">
-                        <CheckCircle2 size={20} strokeWidth={1.5} className="text-black" />
-                        <span className="text-[0.9rem] font-medium text-[#111]">Contraste</span>
-                        <span className="text-[0.8rem] text-[#888] font-mono ml-auto">CLARO</span>
+                    <div className="flex items-center gap-4 py-4 border-b border-gray-100">
+                        <CheckCircle2 className="w-5 h-5 text-black" />
+                        <span className="text-sm font-medium text-gray-900">Imagen cargada</span>
+                        <span className="text-xs text-gray-400 font-mono ml-auto">OK</span>
                     </div>
                 </div>
-                <button type="button" onClick={onContinue} className="w-full bg-black text-white border border-black py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium hover:bg-[#333] transition-colors">Continuar</button>
-                <button type="button" onClick={onChangePhoto} className="w-full bg-transparent text-[#999] hover:text-black mt-6 text-[0.7rem] uppercase tracking-[0.1em] transition-colors">Cambiar Foto</button>
-                <button type="button" onClick={onChangeMeasurements} className="w-full bg-transparent text-[#999] hover:text-black mt-4 text-[0.7rem] uppercase tracking-[0.1em] transition-colors">Cambiar valores corporales</button>
+                <button type="button" onClick={onContinue} className="w-full bg-black text-white border border-black p-5 text-sm uppercase tracking-[0.15em] font-medium hover:bg-zinc-800 transition-colors">Continuar</button>
+                <button type="button" onClick={onChangePhoto} className="w-full bg-transparent text-gray-400 hover:text-black mt-6 text-xs uppercase tracking-[0.1em] transition-colors">Cambiar Foto</button>
             </div>
         );
 
@@ -375,25 +357,24 @@
             const handleSelect = (gender) => { onSelect(gender); setTimeout(onNext, 300); };
             return (
                 <div className="flex flex-col h-full">
-                    <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.2em] font-semibold text-[#999] mb-7">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-6">
                         <span className="w-1.5 h-1.5 bg-black rounded-full"></span>
                         Datos Corporales
                     </div>
-                    <h2 className="text-[2.5rem] font-light leading-tight tracking-tight mb-5 text-black">¿Cuál es tu género?</h2>
-                    <MobileVisualImg src={DEFAULT_IMAGES.default} />
-                    <p className="text-[0.9rem] text-[#666] leading-relaxed mb-6">Para optimizar el corte de la prenda.</p>
-                    <div className="grid grid-cols-2 gap-5 mt-6">
-                        <button onClick={() => handleSelect('female')} className={`border py-10 px-5 flex flex-col items-center gap-4 transition-all duration-300 rounded-sm group cursor-pointer ${selected === 'female' ? 'border-black text-black shadow-lg' : 'border-[#eee] text-[#999] hover:border-black hover:text-black hover:-translate-y-0.5'}`} style={{ transition: 'all 0.3s cubic-bezier(0.25, 1, 0.5, 1)' }}>
-                            <CircleUser size={40} strokeWidth={1} />
-                            <span className="text-[0.9rem] uppercase tracking-[0.1em]">Mujer</span>
+                    <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-4 text-black">¿Cuál es tu género?</h2>
+                    <p className="text-sm text-gray-500 leading-relaxed mb-8">Para optimizar el corte de la prenda.</p>
+                    <div className="grid grid-cols-2 gap-5 mb-8">
+                        <button onClick={() => handleSelect('female')} className={`border p-10 flex flex-col items-center gap-4 transition-all duration-300 rounded-sm group ${selected === 'female' ? 'border-black text-black shadow-lg' : 'border-gray-100 text-gray-400 hover:border-black hover:text-black hover:-translate-y-1'}`}>
+                            <CircleUser className="w-10 h-10 stroke-1" />
+                            <span className="text-sm uppercase tracking-[0.1em]">Mujer</span>
                         </button>
-                        <button onClick={() => handleSelect('male')} className={`border py-10 px-5 flex flex-col items-center gap-4 transition-all duration-300 rounded-sm group cursor-pointer ${selected === 'male' ? 'border-black text-black shadow-lg' : 'border-[#eee] text-[#999] hover:border-black hover:text-black hover:-translate-y-0.5'}`} style={{ transition: 'all 0.3s cubic-bezier(0.25, 1, 0.5, 1)' }}>
-                            <User size={40} strokeWidth={1} />
-                            <span className="text-[0.9rem] uppercase tracking-[0.1em]">Hombre</span>
+                        <button onClick={() => handleSelect('male')} className={`border p-10 flex flex-col items-center gap-4 transition-all duration-300 rounded-sm group ${selected === 'male' ? 'border-black text-black shadow-lg' : 'border-gray-100 text-gray-400 hover:border-black hover:text-black hover:-translate-y-1'}`}>
+                            <User className="w-10 h-10 stroke-1" />
+                            <span className="text-sm uppercase tracking-[0.1em]">Hombre</span>
                         </button>
                     </div>
                     <div className="mt-auto">
-                        <button type="button" onClick={onBack} className="w-full bg-transparent text-[#999] hover:text-black text-[0.7rem] uppercase tracking-[0.1em] transition-colors mt-6">Atrás</button>
+                        <button type="button" onClick={onBack} className="w-full bg-transparent text-gray-400 hover:text-black text-xs uppercase tracking-[0.1em] transition-colors">Atrás</button>
                     </div>
                 </div>
             );
@@ -405,21 +386,20 @@
             const handleKeyDown = (e) => { if (e.key === 'Enter' && value) onNext(); };
             return (
                 <div className="flex flex-col h-full">
-                    <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.2em] font-semibold text-[#999] mb-7">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-6">
                         <span className="w-1.5 h-1.5 bg-black rounded-full"></span>
                         Datos Corporales
                     </div>
-                    <h2 className="text-[2.5rem] font-light leading-tight tracking-tight mb-4 text-black">{title}</h2>
-                    <MobileVisualImg src={DEFAULT_IMAGES.default} />
-                    <div className="relative my-5 mb-10 border-b border-[#e5e5e5] focus-within:border-black transition-colors duration-300">
-                        <input ref={inputRef} type="number" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} className="w-full py-2.5 bg-transparent outline-none text-black placeholder-gray-200" style={{ fontSize: '4rem', fontWeight: 100, fontFamily: "'Inter', sans-serif" }} />
-                        <span className="absolute right-0 bottom-[30px] text-base text-[#aaa] tracking-wider lowercase">{suffix}</span>
+                    <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-4 text-black">{title}</h2>
+                    <div className="relative my-10 border-b border-gray-200 focus-within:border-black transition-colors duration-300">
+                        <input ref={inputRef} type="number" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} className="w-full text-6xl md:text-7xl font-thin py-2 bg-transparent outline-none text-black placeholder-gray-200" />
+                        <span className="absolute right-0 bottom-4 text-base text-gray-400 tracking-wider">{suffix}</span>
                     </div>
                     <div className="mt-auto flex flex-col gap-6">
-                        <button type="button" onClick={onNext} disabled={!value} className="w-full bg-black text-white border border-black py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium hover:bg-[#333] transition-colors disabled:bg-[#f5f5f5] disabled:border-[#f5f5f5] disabled:text-[#ccc] disabled:cursor-not-allowed">
+                        <button type="button" onClick={onNext} disabled={!value} className="w-full bg-black text-white border border-black p-5 text-sm uppercase tracking-[0.15em] font-medium hover:bg-zinc-800 transition-colors disabled:bg-gray-100 disabled:border-gray-100 disabled:text-gray-300 disabled:cursor-not-allowed">
                             {isLastStep ? 'Analizar' : 'Siguiente'}
                         </button>
-                        <button type="button" onClick={onBack} className="w-full bg-transparent text-[#999] hover:text-black text-[0.7rem] uppercase tracking-[0.1em] transition-colors">Atrás</button>
+                        <button type="button" onClick={onBack} className="w-full bg-transparent text-gray-400 hover:text-black text-xs uppercase tracking-[0.1em] transition-colors">Atrás</button>
                     </div>
                 </div>
             );
@@ -428,6 +408,7 @@
         // Obtener sizes y colors dinámicamente de CONFIG
         const SIZES = CONFIG.options.sizes.length > 0 ? CONFIG.options.sizes : ['M', 'L', 'XL'];
 
+        // Mapear nombres de colores a valores hex
         const colorMap = {
             'Black': '#1a1a1a',
             'Gray': '#808080', 
@@ -447,6 +428,7 @@
         }));
 
         const Result = ({ userData, resultImage, recommendedSize, onReset }) => {
+            // Detectar si es producto simple (sin configuraciones)
             const isSimpleProduct = Object.keys(CONFIG.configurations).length === 0 && 
                                 CONFIG.options.sizes.length === 0 && 
                                 CONFIG.options.colors.length === 0;
@@ -464,17 +446,21 @@
                 try {
                     setIsAdding(true);
                     
+                    // Para productos simples, no enviar size/color
                     if (isSimpleProduct) {
                         await addToCart(CONFIG.productId, null, null);
                     } else {
                         await addToCart(CONFIG.productId, selectedSize, selectedColor);
                     }
                     
+                    // Invalidar las secciones de Magento para forzar recarga del mini-cart
                     window.parent.localStorage.removeItem('mage-cache-storage');
                     window.parent.localStorage.removeItem('mage-cache-storage-section-invalidation');
                     
+                    // Cerrar el modal
                     window.parent.document.getElementById('clostech-modal').style.display = 'none';
                     
+                    // Recargar para mostrar notificación y actualizar carrito
                     window.parent.location.reload();
                 } catch (error) {
                     console.error('Error agregando al carrito:', error);
@@ -493,86 +479,84 @@
                 const sizeIndex = SIZES.indexOf(size);
                 const recommendedIndex = SIZES.indexOf(recommendedSize);
                 
-                if (size === recommendedSize) return 'Recomendado';
+                if (size === recommendedSize) return 'Ideal';
                 if (sizeIndex < recommendedIndex) return 'Ajustado';
                 return 'Suelto';
             };
 
             return (
                 <div className="flex flex-col animate-fade-in h-full">
-                    <div className="flex items-center gap-2 text-[0.7rem] uppercase tracking-[0.2em] font-semibold text-black mb-7">
+                    <div className="flex items-center gap-2 text-xs uppercase tracking-[0.2em] font-semibold text-black mb-6">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
-                        Match: 98%
+                        Análisis Completo
                     </div>
-                    <h2 className="text-[2.5rem] font-light leading-tight tracking-tight mb-5 text-black">{randomTitle}</h2>
-                    <MobileVisualImg src={resultImage || DEFAULT_IMAGES.default} />
-                    <p className="text-[0.9rem] text-[#666] leading-relaxed mb-10">
+                    <h2 className="text-4xl md:text-[2.5rem] font-light leading-none tracking-tight mb-4 text-black">{randomTitle}</h2>
+                    <p className="text-sm text-gray-500 leading-relaxed mb-12">
                         Te recomiendo <strong className="text-black font-semibold">Talla {selectedSize}</strong>
                     </p>
 
-                    <div className="w-full max-w-[320px] mx-auto mb-12 select-none relative" style={{ paddingTop: '10px' }}>
-                        <div className="absolute top-[10px] left-2 right-2 h-[1px] bg-[#e5e5e5]"></div>
-                        <div className="flex justify-between items-start w-full px-1 relative">
-                            {SIZES.map((size) => {
-                                const isSelected = selectedSize === size;
-                                return (
-                                    <button key={size} onClick={() => setSelectedSize(size)} className="group flex flex-col items-center gap-3 focus:outline-none cursor-pointer" style={{ transition: 'transform 0.2s' }}>
-                                        <div className={`w-[11px] h-[11px] rounded-full border transition-all duration-300 relative z-10
-                                            ${isSelected ? 'bg-black border-black shadow-[0_0_0_4px_rgba(0,0,0,0.1)] scale-[1.2]' : 'bg-white border-[#ccc] group-hover:scale-105'}`} style={{ transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}></div>
-                                        <div className={`flex flex-col items-center transition-all duration-300 ${isSelected ? 'opacity-100 text-black font-semibold' : 'opacity-60 text-[#999]'}`}>
-                                            <span className="text-base font-bold leading-none mb-0.5">{size}</span>
-                                            <span className="text-[0.75rem] leading-snug">{getLabel(size)}</span>
-                                        </div>
-                                    </button>
-                                );
-                            })}
+                    <div className="w-full max-w-[320px] mx-auto mb-14 select-none">
+                        <div className="relative">
+                            <div className="absolute top-[10px] left-2 right-2 h-[1px] bg-gray-100 -z-10"></div>
+                            <div className="flex justify-between items-start w-full px-1">
+                                {SIZES.map((size) => {
+                                    const isSelected = selectedSize === size;
+                                    return (
+                                        <button key={size} onClick={() => setSelectedSize(size)} className="group flex flex-col items-center gap-4 focus:outline-none cursor-pointer">
+                                            <div className={`w-6 h-6 rounded-full border-2 transition-all duration-300 ease-out relative z-10
+                                                ${isSelected ? 'bg-black border-black scale-110 shadow-lg ring-4 ring-black/5' : 'bg-white border-gray-200 group-hover:border-gray-300 group-hover:scale-105'}`}></div>
+                                            <div className={`flex flex-col items-center transition-all duration-300 transform ${isSelected ? 'opacity-100 translate-y-0' : 'opacity-40 translate-y-1'}`}>
+                                                <span className={`text-lg font-bold leading-none mb-1 ${isSelected ? 'text-black' : 'text-gray-400'}`}>{size}</span>
+                                                <span className="text-[10px] uppercase tracking-[0.2em] font-semibold text-gray-500">{getLabel(size)}</span>
+                                            </div>
+                                        </button>
+                                    );
+                                })}
+                            </div>
                         </div>
                     </div>
 
-                    <div className="flex gap-3 mb-auto">
+                    <div className="text-xs uppercase tracking-[0.2em] font-semibold text-gray-400 mb-4">Variantes</div>
+                    <div className="flex gap-4 mb-auto">
                         {COLORS.map((color) => (
                             <button 
                                 key={color.name} 
                                 onClick={() => setSelectedColor(color.name)}
-                                className={`w-8 h-8 rounded-full relative transition-all duration-200 hover:scale-105`}
-                                style={{ 
-                                    backgroundColor: color.hex,
-                                    border: '1px solid rgba(0,0,0,0.1)',
-                                    ...(selectedColor === color.name ? { outline: '1px solid #000', outlineOffset: '3px' } : {})
-                                }}
+                                className={`w-10 h-10 rounded-full border-2 border-gray-200 relative transition-all duration-300 hover:scale-105 hover:shadow-md ${selectedColor === color.name ? 'ring-2 ring-offset-2 ring-black shadow-lg' : 'opacity-80 hover:opacity-100'}`}
+                                style={{ backgroundColor: color.hex }}
                                 title={color.name}
                             />
                         ))}
                     </div>
 
-                    <div className="mt-12">
+                    <div className="mt-8">
                         <div className="grid grid-cols-[1fr_auto_auto] gap-3 mb-4">
                             <button 
                                 onClick={handleAddToCart}
                                 disabled={isAdding}
-                                className="flex items-center justify-center gap-3 bg-black text-white py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium hover:bg-[#333] transition-colors active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
+                                className="flex items-center justify-center gap-3 bg-black text-white p-5 text-sm uppercase tracking-widest font-medium hover:bg-zinc-800 transition-colors shadow-sm active:transform active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <ShoppingBag size={18} />
                                 <span>{isAdding ? 'Agregando...' : `Añadir ${selectedSize}`}</span>
                             </button>
-                            <button onClick={handleWhatsapp} className="w-[50px] bg-white border border-[#e5e5e5] flex items-center justify-center hover:border-[#25D366] hover:text-[#25D366] transition-all text-[#333] text-[1.2rem]">
+                            <button onClick={handleWhatsapp} className="w-[60px] bg-white border border-gray-200 flex items-center justify-center hover:border-[#25d366] hover:text-[#25d366] transition-colors">
                                 <MessageCircle size={20} />
                             </button>
-                            <button className="w-[50px] bg-white border border-[#e5e5e5] flex items-center justify-center hover:border-black hover:text-black transition-all text-[#333] text-[1.2rem]">
+                            <button className="w-[60px] bg-white border border-gray-200 flex items-center justify-center hover:border-black hover:text-black transition-colors">
                                 <Download size={20} />
                             </button>
                         </div>
-                        <button type="button" onClick={onReset} className="w-full text-center text-[#999] hover:text-black text-[0.7rem] uppercase tracking-[0.1em] transition-colors py-2 mt-4">Probar otra prenda</button>
+                        <button type="button" onClick={onReset} className="w-full text-center text-gray-400 hover:text-black text-xs uppercase tracking-[0.1em] transition-colors py-2">Probar otra prenda</button>
                     </div>
                 </div>
             );
         };
 
-        const ControlPanel = ({ step, loadingState, loadingMessage, loadingSubMessage, userData, productImage, resultImage, recommendedSize, errorMessage, onUpload, onReset, onUpdateUser, onNext, onBack, onAnalyze, onChangeMeasurements }) => {
+        const ControlPanel = ({ step, loadingState, loadingMessage, loadingSubMessage, userData, productImage, resultImage, recommendedSize, errorMessage, onUpload, onReset, onUpdateUser, onNext, onBack, onAnalyze }) => {
             const renderStep = () => {
                 switch (step) {
                     case Step.INSTRUCTIONS: return <Instructions onUpload={onUpload} productImage={productImage} />;
-                    case Step.CONFIRMATION: return <Confirmation onContinue={onNext} onChangePhoto={onReset} onChangeMeasurements={onChangeMeasurements} />;
+                    case Step.CONFIRMATION: return <Confirmation onContinue={onNext} onChangePhoto={onReset} />;
                     case Step.GENDER: return <GenderSelection selected={userData.gender} onSelect={(gender) => onUpdateUser({ gender })} onNext={onNext} onBack={onBack} />;
                     case Step.AGE: return <MeasurementInput title="Tu Edad" value={userData.age} suffix="años" placeholder="00" onChange={(val) => onUpdateUser({ age: val })} onNext={onNext} onBack={onBack} />;
                     case Step.WEIGHT: return <MeasurementInput title="Tu Peso" value={userData.weight} suffix="kg" placeholder="00" onChange={(val) => onUpdateUser({ weight: val })} onNext={onNext} onBack={onBack} />;
@@ -586,10 +570,10 @@
             return (
                 <section className="relative flex-1 bg-white overflow-hidden">
                     <div className="h-full w-full overflow-y-auto no-scrollbar">
-                        <div className="flex flex-col min-h-full py-6 px-5 md:py-[70px] md:px-[60px] justify-center">
+                        <div className="flex flex-col min-h-full p-5 md:p-14 justify-center">
                             <div className="absolute top-0 right-0 p-5 md:p-8 z-10">
-                                <button onClick={onReset} className="text-[#111] hover:rotate-90 transition-transform duration-300 cursor-pointer" style={{ fontSize: '32px' }}>
-                                    <X size={28} strokeWidth={1.5} />
+                                <button onClick={onReset} className="text-gray-800 hover:rotate-90 transition-transform duration-300 p-2 bg-white/80 backdrop-blur-sm rounded-full">
+                                    <X size={24} strokeWidth={1.5} />
                                 </button>
                             </div>
                             {loadingState !== LoadingState.IDLE && (
@@ -602,16 +586,6 @@
                                     {renderStep()}
                                 </div>
                             )}
-                            {/* Footer branding */}
-                            <div className="mt-auto pt-10 w-full flex justify-center gap-3 items-center text-[11px] text-[#9ca3af] font-normal tracking-wide pb-5 flex-shrink-0">
-                                <a href="https://clostech.tech" target="_blank" rel="noopener noreferrer" className="text-[#9ca3af] no-underline hover:text-[#6b7280] transition-colors">
-                                    By Clostech
-                                </a>
-                                <span className="text-[#d1d5db]">•</span>
-                                <a href="https://clostech.tech/privacidad" target="_blank" rel="noopener noreferrer" className="text-[#9ca3af] no-underline hover:text-[#6b7280] transition-colors">
-                                    Privacidad
-                                </a>
-                            </div>
                         </div>
                     </div>
                 </section>
@@ -642,6 +616,7 @@
             const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
             const updateUserData = (updates) => setState((prev) => ({ ...prev, userData: { ...prev.userData, ...updates } }));
 
+            // Subir foto - solo preview local, sube a API después
             const handleUpload = (file) => {
                 const objectUrl = URL.createObjectURL(file);
                 updateState({ 
@@ -652,14 +627,6 @@
             };
 
             const handleReset = () => setState(INITIAL_STATE);
-
-            // "Cambiar valores corporales" → go to gender step keeping the photo
-            const handleChangeMeasurements = () => {
-                updateState({ 
-                    userData: INITIAL_USER_DATA,
-                    step: Step.GENDER 
-                });
-            };
 
             const handleNext = () => {
                 switch (state.step) {
@@ -681,9 +648,11 @@
                 }
             };
 
+            // Procesar con IA - llamadas reales a la API
             const handleAnalyze = async () => {
                 
                 try {
+                    // Paso 1: Subir imagen del usuario
                     updateState({ 
                         loadingState: LoadingState.UPLOADING, 
                         loadingMessage: 'Subiendo imagen...', 
@@ -692,6 +661,7 @@
 
                     const userImageUrl = await uploadUserPhoto(state.userFile);
 
+                    // Paso 2: Procesar con IA
                     updateState({ 
                         loadingState: LoadingState.ANALYZING, 
                         loadingMessage: 'Analizando con IA...', 
@@ -701,8 +671,10 @@
 
                     const result = await processWithAI(userImageUrl);
 
+                    // Guardar uso en localStorage
                     saveUsageToLocalStorage(result.result_image_url);
 
+                    // Mostrar resultado
                     updateState({ 
                         loadingState: LoadingState.IDLE, 
                         step: Step.RESULT, 
@@ -724,8 +696,8 @@
             const isInstructionStep = state.step === Step.INSTRUCTIONS;
 
             return (
-                <main className="w-full h-full md:h-auto md:w-[90%] md:max-w-[1100px] bg-white md:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] overflow-hidden flex flex-col md:grid md:grid-cols-[45%_55%] md:min-h-[650px] md:rounded-none rounded-xl md:max-h-none" style={{ maxHeight: window.innerWidth < 768 ? '85vh' : 'none' }}>
-                    <div className={`${isInstructionStep ? 'hidden md:block' : 'hidden md:block'} w-full h-full`}>
+                <main className="w-full h-full md:h-auto md:w-[90%] md:max-w-[1100px] bg-white md:shadow-2xl overflow-hidden flex flex-col md:grid md:grid-cols-[45%_55%] md:min-h-[650px]">
+                    <div className={`${isInstructionStep ? 'hidden md:block' : 'block'} w-full h-[35dvh] md:h-auto`}>
                         <VisualPanel imageSrc={state.previewImage} loadingState={state.loadingState} />
                     </div>
                     <ControlPanel
@@ -744,7 +716,6 @@
                         onNext={handleNext}
                         onBack={handleBack}
                         onAnalyze={handleAnalyze}
-                        onChangeMeasurements={handleChangeMeasurements}
                     />
                 </main>
             );
