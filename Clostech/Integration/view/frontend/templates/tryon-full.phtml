@@ -142,7 +142,7 @@
             return data.url;
         };
 
-        const processWithAI = async (userImageUrl) => {
+        const processWithAI = async (userImageUrl, { variantId = null, variantValues = null } = {}) => {
             const response = await fetch(`${CLOSTECH_API_URL}/api/ai-v2`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -151,8 +151,8 @@
                     store_id: CONFIG.storeId,
                     client_id: CONFIG.clientId,
                     product_id: CONFIG.productId,
-                    variant_id: null,
-                    variant_values: null,
+                    variant_id: variantId,
+                    variant_values: variantValues,
                     user_image_url: userImageUrl,
                     cloth_image_url: CONFIG.productImage,
                 }),
@@ -276,7 +276,7 @@
             </div>
         );
 
-        const VisualPanel = ({ imageSrc, loadingState }) => {
+        const VisualPanel = ({ imageSrc, loadingState, isReprocessing }) => {
             const isUploading = loadingState === LoadingState.UPLOADING;
             const isAnalyzing = loadingState === LoadingState.ANALYZING;
 
@@ -286,6 +286,14 @@
                     <div className={`absolute inset-0 z-10 opacity-0 transition-opacity duration-500 pointer-events-none ${isAnalyzing ? 'opacity-100' : ''}`}
                         style={{ backgroundImage: `linear-gradient(rgba(124, 58, 237, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(124, 58, 237, 0.1) 1px, transparent 1px)`, backgroundSize: '50px 50px' }} />
                     {isAnalyzing && <div className="absolute inset-0 z-10 pointer-events-none" style={{ background: 'linear-gradient(180deg, rgba(76, 29, 149, 0.3) 0%, rgba(124, 58, 237, 0.1) 100%)' }} />}
+                    {isReprocessing && (
+                        <div className="absolute inset-0 z-20 bg-black/40 backdrop-blur-sm flex items-center justify-center">
+                            <div className="flex flex-col items-center gap-3">
+                                <div className="w-10 h-10 border-2 border-white/30 border-t-white rounded-full" style={{ animation: 'spin 1s linear infinite' }} />
+                                <span className="text-[0.75rem] uppercase tracking-[0.15em] font-medium text-white">Reprocesando...</span>
+                            </div>
+                        </div>
+                    )}
                     {imageSrc ? (
                         <img src={imageSrc} alt="Preview" className={`w-full h-full object-cover transition-all duration-500 ease-in-out
                             ${isUploading ? 'blur-[15px] opacity-50 scale-110 grayscale' : ''}
@@ -446,7 +454,7 @@
             hex: colorMap[name] || '#999999' 
         }));
 
-        const Result = ({ userData, resultImage, recommendedSize, onReset }) => {
+        const Result = ({ userData, resultImage, recommendedSize, onReset, onReprocess, isReprocessing }) => {
             const isSimpleProduct = Object.keys(CONFIG.configurations).length === 0 && 
                                 CONFIG.options.sizes.length === 0 && 
                                 CONFIG.options.colors.length === 0;
@@ -454,11 +462,34 @@
             const [selectedSize, setSelectedSize] = useState(recommendedSize || SIZES[1] || 'L');
             const [selectedColor, setSelectedColor] = useState(COLORS[0]?.name || 'Black');
             const [isAdding, setIsAdding] = useState(false);
+            const isFirstRender = useRef(true);
+            const debounceTimer = useRef(null);
 
             const titles = userData.gender === 'male'
                 ? ['Te queda impecable', 'Ajuste Perfecto', 'Gran Estilo']
                 : ['Estás radiante', 'Te queda divino', 'Silueta Perfecta'];
-            const randomTitle = titles[Math.floor(Math.random() * titles.length)];
+            const [randomTitle] = useState(() => titles[Math.floor(Math.random() * titles.length)]);
+
+            // Debounced reprocessing when size or color changes
+            useEffect(() => {
+                if (isFirstRender.current) {
+                    isFirstRender.current = false;
+                    return;
+                }
+                if (isSimpleProduct) return;
+
+                if (debounceTimer.current) clearTimeout(debounceTimer.current);
+                debounceTimer.current = setTimeout(() => {
+                    const key = `${selectedSize}-${selectedColor}`;
+                    const variantId = CONFIG.configurations[key] || null;
+                    onReprocess({
+                        variantId,
+                        variantValues: { size: selectedSize, color: selectedColor }
+                    });
+                }, 800);
+
+                return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
+            }, [selectedSize, selectedColor]);
 
             const handleAddToCart = async () => {
                 try {
@@ -506,7 +537,17 @@
                         Match: 98%
                     </div>
                     <h2 className="text-[2.5rem] font-light leading-tight tracking-tight mb-5 text-black">{randomTitle}</h2>
-                    <MobileVisualImg src={resultImage || DEFAULT_IMAGES.default} />
+                    <div className="relative">
+                        <MobileVisualImg src={resultImage || DEFAULT_IMAGES.default} />
+                        {isReprocessing && (
+                            <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-10">
+                                <div className="flex flex-col items-center gap-3">
+                                    <div className="w-8 h-8 border border-black/10 border-t-black rounded-full" style={{ animation: 'spin 1s linear infinite' }} />
+                                    <span className="text-[0.75rem] uppercase tracking-[0.15em] font-medium text-black">Reprocesando...</span>
+                                </div>
+                            </div>
+                        )}
+                    </div>
                     <p className="text-[0.9rem] text-[#666] leading-relaxed mb-10">
                         Te recomiendo <strong className="text-black font-semibold">Talla {selectedSize}</strong>
                     </p>
@@ -550,7 +591,7 @@
                         <div className="grid grid-cols-[1fr_auto_auto] gap-3 mb-4">
                             <button 
                                 onClick={handleAddToCart}
-                                disabled={isAdding}
+                                disabled={isAdding || isReprocessing}
                                 className="flex items-center justify-center gap-3 bg-black text-white py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium hover:bg-[#333] transition-colors active:scale-[0.99] disabled:opacity-50 disabled:cursor-not-allowed"
                             >
                                 <ShoppingBag size={18} />
@@ -569,7 +610,7 @@
             );
         };
 
-        const ControlPanel = ({ step, loadingState, loadingMessage, loadingSubMessage, userData, productImage, resultImage, recommendedSize, errorMessage, onUpload, onReset, onUpdateUser, onNext, onBack, onAnalyze, onChangeMeasurements }) => {
+        const ControlPanel = ({ step, loadingState, loadingMessage, loadingSubMessage, userData, productImage, resultImage, recommendedSize, errorMessage, isReprocessing, onUpload, onReset, onUpdateUser, onNext, onBack, onAnalyze, onChangeMeasurements, onReprocess }) => {
             const renderStep = () => {
                 switch (step) {
                     case Step.INSTRUCTIONS: return <Instructions onUpload={onUpload} productImage={productImage} />;
@@ -578,7 +619,7 @@
                     case Step.AGE: return <MeasurementInput title="Tu Edad" value={userData.age} suffix="años" placeholder="00" onChange={(val) => onUpdateUser({ age: val })} onNext={onNext} onBack={onBack} />;
                     case Step.WEIGHT: return <MeasurementInput title="Tu Peso" value={userData.weight} suffix="kg" placeholder="00" onChange={(val) => onUpdateUser({ weight: val })} onNext={onNext} onBack={onBack} />;
                     case Step.HEIGHT: return <MeasurementInput title="Tu Altura" value={userData.height} suffix="cm" placeholder="000" onChange={(val) => onUpdateUser({ height: val })} onNext={onAnalyze} onBack={onBack} isLastStep />;
-                    case Step.RESULT: return <Result userData={userData} resultImage={resultImage} recommendedSize={recommendedSize} onReset={onReset} />;
+                    case Step.RESULT: return <Result userData={userData} resultImage={resultImage} recommendedSize={recommendedSize} onReset={onReset} onReprocess={onReprocess} isReprocessing={isReprocessing} />;
                     case Step.ERROR: return <ErrorDisplay message={errorMessage} onRetry={onReset} />;
                     default: return null;
                 }
@@ -635,6 +676,7 @@
             recommendedSize: null,
             errorMessage: null,
             userFile: null,
+            isReprocessing: false,
         };
 
         const App = () => {
@@ -724,10 +766,30 @@
 
             const isInstructionStep = state.step === Step.INSTRUCTIONS;
 
+            // Reprocess AI with new variant (color/size change)
+            const handleReprocess = async ({ variantId, variantValues }) => {
+                if (!state.userImageUrl) return;
+                
+                try {
+                    updateState({ isReprocessing: true });
+
+                    const result = await processWithAI(state.userImageUrl, { variantId, variantValues });
+
+                    updateState({ 
+                        isReprocessing: false,
+                        resultImage: result.result_image_url,
+                        previewImage: result.result_image_url,
+                    });
+                } catch (error) {
+                    console.error('Error en reprocesamiento:', error);
+                    updateState({ isReprocessing: false });
+                }
+            };
+
             return (
                 <main className="w-full h-full md:h-auto md:w-[90%] md:max-w-[1100px] bg-white md:shadow-[0_50px_100px_-20px_rgba(0,0,0,0.25)] overflow-hidden flex flex-col md:grid md:grid-cols-[45%_55%] md:min-h-[650px] md:rounded-none rounded-xl md:max-h-none" style={{ maxHeight: window.innerWidth < 768 ? '85vh' : 'none' }}>
                     <div className={`${isInstructionStep ? 'hidden md:block' : 'hidden md:block'} w-full h-full`}>
-                        <VisualPanel imageSrc={state.previewImage} loadingState={state.loadingState} />
+                        <VisualPanel imageSrc={state.previewImage} loadingState={state.loadingState} isReprocessing={state.isReprocessing} />
                     </div>
                     <ControlPanel
                         step={state.step}
@@ -739,6 +801,7 @@
                         resultImage={state.resultImage}
                         recommendedSize={state.recommendedSize}
                         errorMessage={state.errorMessage}
+                        isReprocessing={state.isReprocessing}
                         onUpload={handleUpload}
                         onReset={handleReset}
                         onUpdateUser={updateUserData}
@@ -746,6 +809,7 @@
                         onBack={handleBack}
                         onAnalyze={handleAnalyze}
                         onChangeMeasurements={handleChangeMeasurements}
+                        onReprocess={handleReprocess}
                     />
                 </main>
             );
