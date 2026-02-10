@@ -511,6 +511,7 @@
                     });
 
                     window.parent.document.getElementById('clostech-modal').style.display = 'none';
+                    window.parent.location.reload();
                 } catch (error) {
                     console.error('Error agregando al carrito:', error);
                     alert('Error al agregar al carrito. Por favor, intenta de nuevo.');
@@ -540,7 +541,7 @@
                         Match: 98%
                     </div>
                     <h2 className="text-[2.5rem] font-light leading-tight tracking-tight mb-5 text-black">{randomTitle}</h2>
-                    <div className="relative">
+                    <div className="relative md:hidden">
                         <MobileVisualImg src={resultImage || DEFAULT_IMAGES.default} />
                         {isReprocessing && (
                             <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center rounded-lg z-10">
