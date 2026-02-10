@@ -198,4 +198,51 @@ class TryOnButton extends Template
     {
         return json_encode($this->getProductOptions());
     }
+
+    /**
+     * Get variant images mapping color => image_url
+     * Returns the first image found for each color from child products
+     */
+    public function getVariantImages(): array
+    {
+        $product = $this->getCurrentProduct();
+        
+        if (!$product || $product->getTypeId() !== 'configurable') {
+            return [];
+        }
+        
+        $variantImages = [];
+        
+        try {
+            $configurableProduct = $this->productRepository->get($product->getSku());
+            $children = $configurableProduct->getTypeInstance()->getUsedProducts($configurableProduct);
+            
+            foreach ($children as $child) {
+                $color = $child->getAttributeText('color');
+                
+                // Solo una imagen por color (la primera que encontremos)
+                if ($color && !isset($variantImages[$color])) {
+                    // Cargar el producto hijo completo para acceder a sus imágenes
+                    $childProduct = $this->productRepository->getById($child->getId());
+                    $imageUrl = $this->imageHelper->init($childProduct, 'product_page_image_large')->getUrl();
+                    
+                    if ($imageUrl) {
+                        $variantImages[$color] = $imageUrl;
+                    }
+                }
+            }
+        } catch (\Exception $e) {
+            $this->logger->error('Error getting variant images: ' . $e->getMessage());
+        }
+        
+        return $variantImages;
+    }
+
+    /**
+     * Get variant images as JSON
+     */
+    public function getVariantImagesJson(): string
+    {
+        return json_encode($this->getVariantImages());
+    }
 }

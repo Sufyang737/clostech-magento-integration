@@ -8,7 +8,8 @@ $storeId = $block->getStoreId();
 $apiKey = $block->getApiKey();
 $clientId = $block->getClientId();
 $configurations = $block->getProductConfigurationsJson();
-$options = $block->getProductOptionsJson();  // <- AGREGAR ESTA LÍNEA
+$options = $block->getProductOptionsJson();
+$variantImages = $block->getVariantImagesJson();
 
 $iframeParams = http_build_query([
     'product_id' => $productId,
@@ -19,7 +20,8 @@ $iframeParams = http_build_query([
     'api_key' => $apiKey,
     'client_id' => $clientId,
     'configurations' => $configurations,
-    'options' => $options  // <- AGREGAR ESTA LÍNEA
+    'options' => $options,
+    'variant_images' => $variantImages
 ]);
 ?>
 

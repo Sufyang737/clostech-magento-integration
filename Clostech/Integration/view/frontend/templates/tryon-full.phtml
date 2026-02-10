@@ -115,7 +115,8 @@
                 apiKey: params.get('api_key') || null,
                 clientId: params.get('client_id') || null,
                 configurations: JSON.parse(params.get('configurations') || '{}'),
-                options: JSON.parse(params.get('options') || '{"sizes":[],"colors":[]}')
+                options: JSON.parse(params.get('options') || '{"sizes":[],"colors":[]}'),
+                variantImages: JSON.parse(params.get('variant_images') || '{}')
             };
         };
 
@@ -142,7 +143,7 @@
             return data.url;
         };
 
-        const processWithAI = async (userImageUrl, { variantId = null, variantValues = null } = {}) => {
+        const processWithAI = async (userImageUrl, { variantId = null, variantValues = null, clothImageUrl = null } = {}) => {
             const response = await fetch(`${CLOSTECH_API_URL}/api/ai-v2`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -154,7 +155,7 @@
                     variant_id: variantId,
                     variant_values: variantValues,
                     user_image_url: userImageUrl,
-                    cloth_image_url: CONFIG.productImage,
+                    cloth_image_url: clothImageUrl || CONFIG.productImage,
                 }),
             });
 
@@ -482,9 +483,11 @@
                 debounceTimer.current = setTimeout(() => {
                     const key = `${selectedSize}-${selectedColor}`;
                     const variantId = CONFIG.configurations[key] || null;
+                    const clothImageUrl = CONFIG.variantImages[selectedColor] || null;
                     onReprocess({
                         variantId,
-                        variantValues: { size: selectedSize, color: selectedColor }
+                        variantValues: { size: selectedSize, color: selectedColor },
+                        clothImageUrl
                     });
                 }, 800);
 
@@ -767,13 +770,13 @@
             const isInstructionStep = state.step === Step.INSTRUCTIONS;
 
             // Reprocess AI with new variant (color/size change)
-            const handleReprocess = async ({ variantId, variantValues }) => {
+            const handleReprocess = async ({ variantId, variantValues, clothImageUrl }) => {
                 if (!state.userImageUrl) return;
                 
                 try {
                     updateState({ isReprocessing: true });
 
-                    const result = await processWithAI(state.userImageUrl, { variantId, variantValues });
+                    const result = await processWithAI(state.userImageUrl, { variantId, variantValues, clothImageUrl });
 
                     updateState({ 
                         isReprocessing: false,
