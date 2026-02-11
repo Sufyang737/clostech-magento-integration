@@ -259,10 +259,11 @@
         const processWithAI = async (userImageUrl, { variantId = null, variantValues = null, clothImageUrl = null } = {}) => {
             const payload = {
                 api_key: CONFIG.apiKey,
-                store_id: CONFIG.storeId ? String(CONFIG.storeId) : undefined,
-                product_id: CONFIG.productId ? String(CONFIG.productId) : undefined,
-                variant_id: variantId ? String(variantId) : undefined,
-                variant_values: Array.isArray(variantValues) ? variantValues : undefined,
+                store_id: CONFIG.storeId,
+                client_id: CONFIG.clientId,
+                product_id: CONFIG.productId,
+                variant_id: variantId,
+                variant_values: variantValues,
                 user_image_url: userImageUrl,
                 cloth_image_url: clothImageUrl || CONFIG.productImage
             };
@@ -740,7 +741,7 @@
             );
         };
 
-        const ControlPanel = ({ step, loadingState, loadingMessage, loadingSubMessage, userData, productImage, resultImage, recommendedSize, errorMessage, isReprocessing, isUploading, onUpload, onReset, onUpdateUser, onNext, onBack, onAnalyze, onChangeMeasurements, onReprocess }) => {
+        const ControlPanel = ({ step, loadingState, loadingMessage, loadingSubMessage, userData, productImage, resultImage, recommendedSize, errorMessage, isReprocessing, isUploading, onUpload, onReset, onClose, onUpdateUser, onNext, onBack, onAnalyze, onChangeMeasurements, onReprocess }) => {
             const renderStep = () => {
                 switch (step) {
                     case Step.INSTRUCTIONS: return <Instructions onUpload={onUpload} productImage={productImage} isUploading={isUploading} />;
@@ -760,7 +761,7 @@
                     <div className="h-full w-full overflow-y-auto no-scrollbar">
                         <div className="flex flex-col min-h-full py-6 px-5 md:py-[70px] md:px-[60px] justify-center">
                             <div className="absolute top-0 right-0 p-5 md:p-8 z-10">
-                                <button onClick={onReset} className="text-[#111] hover:rotate-90 transition-transform duration-300 cursor-pointer" style={{ fontSize: '32px' }}>
+                                <button onClick={onClose} className="text-[#111] hover:rotate-90 transition-transform duration-300 cursor-pointer" style={{ fontSize: '32px' }}>
                                     <XIcon size={28} />
                                 </button>
                             </div>
