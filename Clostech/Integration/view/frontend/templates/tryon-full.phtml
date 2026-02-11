@@ -234,6 +234,10 @@
         };
 
         const CONFIG = getUrlParams();
+        // Trim whitespace from API credentials (Magento sometimes adds leading spaces)
+        if (CONFIG.storeId) CONFIG.storeId = CONFIG.storeId.trim();
+        if (CONFIG.apiKey) CONFIG.apiKey = CONFIG.apiKey.trim();
+        if (CONFIG.clientId) CONFIG.clientId = CONFIG.clientId.trim();
         const CLOSTECH_API_URL = 'https://portal-empresa.clostech.tech';
 
         // =====================================================================
@@ -257,29 +261,22 @@
         };
 
         const processWithAI = async (userImageUrl, { variantId = null, variantValues = null, clothImageUrl = null } = {}) => {
-            const payload = {
-                api_key: CONFIG.apiKey,
-                store_id: CONFIG.storeId,
-                client_id: CONFIG.clientId,
-                product_id: CONFIG.productId,
-                variant_id: variantId,
-                variant_values: variantValues,
-                user_image_url: userImageUrl,
-                cloth_image_url: clothImageUrl || CONFIG.productImage
-            };
-            console.log('[Clostech] AI payload:', payload);
-
             const response = await fetch(`${CLOSTECH_API_URL}/api/ai-v2`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(payload),
+                body: JSON.stringify({
+                    api_key: CONFIG.apiKey,
+                    store_id: CONFIG.storeId,
+                    client_id: CONFIG.clientId,
+                    product_id: CONFIG.productId,
+                    variant_id: variantId,
+                    variant_values: variantValues,
+                    user_image_url: userImageUrl,
+                    cloth_image_url: clothImageUrl || CONFIG.productImage,
+                }),
             });
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({ message: 'Error en IA' }));
-                console.error('[Clostech] AI error response:', errorData);
-                throw new Error(errorData.message || `Error del servicio de IA: ${response.status}`);
-            }
+            if (!response.ok) throw new Error('Error en el procesamiento de IA');
             
             const apiResponse = await response.json();
             
@@ -911,6 +908,8 @@
                 switch (state.step) {
                     case Step.CONFIRMATION:
                         // Fire AI in background while user fills body data
+                        console.log('[Clostech] CONFIG values:', { storeId: CONFIG.storeId, clientId: CONFIG.clientId, apiKey: CONFIG.apiKey, productId: CONFIG.productId });
+                        console.log('[Clostech] userImageUrl:', state.userImageUrl);
                         if (state.userImageUrl) {
                             console.log('[Clostech] Firing AI in background...');
                             aiPromiseRef.current = processWithAI(state.userImageUrl)
