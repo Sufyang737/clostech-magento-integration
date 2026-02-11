@@ -427,7 +427,7 @@
             <img src={src} alt="Visual" className="vm-mobile-img hidden md:!hidden w-full max-h-[350px] object-contain mx-auto mb-5 rounded-lg bg-[#f8fafc]" />
         );
 
-        const Instructions = ({ onUpload, productImage }) => {
+        const Instructions = ({ onUpload, productImage, isUploading }) => {
             const fileInputRef = useRef(null);
             const handleFileChange = (e) => {
                 if (e.target.files && e.target.files[0]) onUpload(e.target.files[0]);
@@ -452,10 +452,15 @@
                             <div className="text-[0.8rem] text-[#666] leading-snug">Cuerpo entero frontal.</div>
                         </div>
                     </div>
-                    <input type="file" hidden ref={fileInputRef} accept="image/*" onChange={handleFileChange} />
+                    <input type="file" hidden ref={fileInputRef} accept="image/*" onChange={handleFileChange} disabled={isUploading} />
                     <div className="mt-auto md:mt-0 pt-2">
-                        <button type="button" onClick={() => fileInputRef.current?.click()} className="vm-btn-primary-react w-full py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium active:scale-[0.99] transition-all flex items-center justify-center">
-                            Subir Foto
+                        <button type="button" onClick={() => !isUploading && fileInputRef.current?.click()} disabled={isUploading} className="vm-btn-primary-react w-full py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium active:scale-[0.99] transition-all flex items-center justify-center gap-3">
+                            {isUploading ? (
+                                <>
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full" style={{ animation: 'spin 1s linear infinite' }} />
+                                    Subiendo...
+                                </>
+                            ) : 'Subir Foto'}
                         </button>
                         <p className="text-center text-[0.7rem] text-[#999] mt-4">Privacidad asegurada.</p>
                     </div>
@@ -521,11 +526,11 @@
                     <h2 className="text-[2.5rem] font-light leading-tight tracking-tight mb-4 text-black">{title}</h2>
                     <MobileVisualImg src={DEFAULT_IMAGES.default} />
                     <div className="relative my-5 mb-10 border-b border-[#e5e5e5] focus-within:border-black transition-colors duration-300">
-                        <input ref={inputRef} type="number" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} className="w-full py-2.5 bg-transparent outline-none text-black placeholder-gray-200" style={{ fontSize: '4rem', fontWeight: 100, fontFamily: "'Inter', sans-serif" }} />
+                        <input ref={inputRef} type="number" value={value} onChange={(e) => onChange(e.target.value)} onKeyDown={handleKeyDown} placeholder={placeholder} className="w-full py-2.5 bg-transparent outline-none text-black placeholder-gray-300" style={{ fontSize: '4rem', fontWeight: 300, fontFamily: "'Inter', sans-serif" }} />
                         <span className="absolute right-0 bottom-[30px] text-base text-[#aaa] tracking-wider lowercase">{suffix}</span>
                     </div>
                     <div className="mt-auto flex flex-col gap-6">
-                        <button type="button" onClick={onNext} disabled={!value} className="vm-btn-primary-react w-full py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
+                        <button type="button" onClick={onNext} disabled={!value} className="vm-btn-primary-react w-full py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium transition-colors disabled:cursor-not-allowed">
                             {isLastStep ? 'Analizar' : 'Siguiente'}
                         </button>
                         <button type="button" onClick={onBack} className="w-full bg-transparent text-[#999] hover:text-black text-[0.7rem] uppercase tracking-[0.1em] transition-colors">Atrás</button>
@@ -629,9 +634,9 @@
                 const sizeIndex = SIZES.indexOf(size);
                 const recommendedIndex = SIZES.indexOf(recommendedSize);
                 
-                if (size === recommendedSize) return 'Recomendado';
-                if (sizeIndex < recommendedIndex) return 'Ajustado';
-                return 'Suelto';
+                if (size === recommendedSize) return 'Recomendación';
+                if (sizeIndex < recommendedIndex) return 'Ajustada';
+                return 'Suelta';
             };
 
             return (
@@ -652,24 +657,33 @@
                             </div>
                         )}
                     </div>
-                    <p className="text-[0.9rem] text-[#666] leading-relaxed mb-10">
-                        Te recomiendo <strong className="text-black font-semibold">Talla {selectedSize}</strong>
+                    <p className="text-[0.9rem] text-[#444] leading-relaxed mb-10">
+                        La IA recomienda <strong className="text-black font-semibold">Talla {selectedSize}</strong> para ti
                     </p>
 
-                    <div className="w-full max-w-[320px] mx-auto mb-12 select-none relative" style={{ paddingTop: '10px' }}>
-                        <div className="absolute top-[10px] left-2 right-2 h-[1px] bg-[#e5e5e5]"></div>
-                        <div className="flex justify-between items-start w-full px-1 relative">
+                    {/* Size scale: sizes on top, line in middle, labels below */}
+                    <div className="w-full max-w-[320px] mx-auto mb-12 select-none">
+                        {/* Size letters */}
+                        <div className="flex justify-between items-end w-full px-1 mb-3">
                             {SIZES.map((size) => {
                                 const isSelected = selectedSize === size;
                                 return (
-                                    <button key={size} onClick={() => setSelectedSize(size)} className="group flex flex-col items-center gap-3 focus:outline-none cursor-pointer" style={{ transition: 'transform 0.2s' }}>
-                                        <div className={`w-[11px] h-[11px] rounded-full border transition-all duration-300 relative z-10
-                                            ${isSelected ? 'bg-black border-black shadow-[0_0_0_4px_rgba(0,0,0,0.1)] scale-[1.2]' : 'bg-white border-[#ccc] group-hover:scale-105'}`} style={{ transition: 'all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275)' }}></div>
-                                        <div className={`flex flex-col items-center transition-all duration-300 ${isSelected ? 'opacity-100 text-black font-semibold' : 'opacity-60 text-[#999]'}`}>
-                                            <span className="text-base font-bold leading-none mb-0.5">{size}</span>
-                                            <span className="text-[0.75rem] leading-snug">{getLabel(size)}</span>
-                                        </div>
+                                    <button key={size} onClick={() => setSelectedSize(size)} className="flex flex-col items-center focus:outline-none cursor-pointer" style={{ minWidth: '50px' }}>
+                                        <span className={`text-base leading-none transition-all duration-300 ${isSelected ? 'text-black font-bold' : 'text-[#999] font-normal'}`}>{size}</span>
                                     </button>
+                                );
+                            })}
+                        </div>
+                        {/* Horizontal line */}
+                        <div className="w-full h-[1px] bg-[#e5e5e5] mx-auto"></div>
+                        {/* Labels below */}
+                        <div className="flex justify-between items-start w-full px-1 mt-3">
+                            {SIZES.map((size) => {
+                                const isSelected = selectedSize === size;
+                                return (
+                                    <div key={size} className="flex flex-col items-center" style={{ minWidth: '50px' }}>
+                                        <span className={`text-[0.7rem] leading-snug transition-all duration-300 ${isSelected ? 'text-black font-semibold' : 'text-[#999]'}`}>{getLabel(size)}</span>
+                                    </div>
                                 );
                             })}
                         </div>
@@ -699,13 +713,19 @@
                                 className="vm-btn-primary-react flex items-center justify-center gap-3 py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium transition-colors active:scale-[0.99] disabled:!opacity-50 disabled:cursor-not-allowed"
                             >
                                 <ShoppingBagIcon size={18} />
-                                <span>{isAdding ? 'Agregando...' : `Añadir ${selectedSize}`}</span>
+                                <span>{isAdding ? 'Agregando...' : `Añadir Talla ${selectedSize}`}</span>
                             </button>
-                            <button onClick={handleWhatsapp} className="w-[50px] bg-white border border-[#e5e5e5] flex items-center justify-center hover:border-[#25D366] hover:text-[#25D366] transition-all text-[#333] text-[1.2rem]">
-                                <WhatsAppIcon size={20} />
+                            <button onClick={handleWhatsapp} className="w-[50px] bg-white border border-[#e5e5e5] flex items-center justify-center hover:border-[#25D366] hover:text-[#25D366] transition-all text-[#555]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z" />
+                                </svg>
                             </button>
-                            <button className="w-[50px] bg-white border border-[#e5e5e5] flex items-center justify-center hover:border-black hover:text-black transition-all text-[#333] text-[1.2rem]">
-                                <DownloadIcon size={20} />
+                            <button className="w-[50px] bg-white border border-[#e5e5e5] flex items-center justify-center hover:border-black hover:text-black transition-all text-[#555]">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
+                                    <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                                    <polyline points="7 10 12 15 17 10" />
+                                    <line x1="12" y1="15" x2="12" y2="3" />
+                                </svg>
                             </button>
                         </div>
                         <button type="button" onClick={onReset} className="w-full text-center text-[#999] hover:text-black text-[0.7rem] uppercase tracking-[0.1em] transition-colors py-2 mt-4">Probar otra prenda</button>
@@ -714,10 +734,10 @@
             );
         };
 
-        const ControlPanel = ({ step, loadingState, loadingMessage, loadingSubMessage, userData, productImage, resultImage, recommendedSize, errorMessage, isReprocessing, onUpload, onReset, onUpdateUser, onNext, onBack, onAnalyze, onChangeMeasurements, onReprocess }) => {
+        const ControlPanel = ({ step, loadingState, loadingMessage, loadingSubMessage, userData, productImage, resultImage, recommendedSize, errorMessage, isReprocessing, isUploading, onUpload, onReset, onUpdateUser, onNext, onBack, onAnalyze, onChangeMeasurements, onReprocess }) => {
             const renderStep = () => {
                 switch (step) {
-                    case Step.INSTRUCTIONS: return <Instructions onUpload={onUpload} productImage={productImage} />;
+                    case Step.INSTRUCTIONS: return <Instructions onUpload={onUpload} productImage={productImage} isUploading={isUploading} />;
                     case Step.CONFIRMATION: return <Confirmation onContinue={onNext} onChangePhoto={onReset} onChangeMeasurements={onChangeMeasurements} />;
                     case Step.GENDER: return <GenderSelection selected={userData.gender} onSelect={(gender) => onUpdateUser({ gender })} onNext={onNext} onBack={onBack} />;
                     case Step.AGE: return <MeasurementInput title="¿Cuál es tu edad?" value={userData.age} suffix="años" placeholder="00" onChange={(val) => onUpdateUser({ age: val })} onNext={onNext} onBack={onBack} />;
@@ -781,6 +801,7 @@
             errorMessage: null,
             userFile: null,
             isReprocessing: false,
+            isUploading: false,
         };
 
         const App = () => {
@@ -829,16 +850,47 @@
             const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
             const updateUserData = (updates) => setState((prev) => ({ ...prev, userData: { ...prev.userData, ...updates } }));
 
-            const handleUpload = (file) => {
+            // Ref to hold the background AI promise (fired on "Continuar")
+            const aiPromiseRef = useRef(null);
+
+            const handleUpload = async (file) => {
                 const objectUrl = URL.createObjectURL(file);
                 updateState({ 
                     previewImage: objectUrl, 
                     userFile: file,
-                    step: Step.CONFIRMATION 
+                    isUploading: true
                 });
+
+                try {
+                    const userImageUrl = await uploadUserPhoto(file);
+                    updateState({ 
+                        isUploading: false,
+                        userImageUrl: userImageUrl,
+                        step: Step.CONFIRMATION 
+                    });
+                } catch (error) {
+                    console.error('Error subiendo foto:', error);
+                    updateState({ 
+                        isUploading: false,
+                        step: Step.ERROR,
+                        errorMessage: 'Error al subir la imagen. Por favor, intenta de nuevo.'
+                    });
+                }
             };
 
-            const handleReset = () => setState(INITIAL_STATE);
+            const handleReset = () => {
+                aiPromiseRef.current = null;
+                setState(INITIAL_STATE);
+            };
+
+            const handleClose = () => {
+                aiPromiseRef.current = null;
+                setState(INITIAL_STATE);
+                try {
+                    const parentModal = window.parent.document.getElementById('clostech-modal');
+                    if (parentModal) parentModal.style.display = 'none';
+                } catch(e) {}
+            };
 
             // "Cambiar valores corporales" → go to gender step keeping the photo
             const handleChangeMeasurements = () => {
@@ -850,7 +902,22 @@
 
             const handleNext = () => {
                 switch (state.step) {
-                    case Step.CONFIRMATION: updateState({ step: Step.GENDER }); break;
+                    case Step.CONFIRMATION:
+                        // Fire AI in background while user fills body data
+                        if (state.userImageUrl) {
+                            console.log('[Clostech] Firing AI in background...');
+                            aiPromiseRef.current = processWithAI(state.userImageUrl)
+                                .then(result => {
+                                    console.log('[Clostech] Background AI completed');
+                                    return result;
+                                })
+                                .catch(err => {
+                                    console.error('[Clostech] Background AI error:', err);
+                                    throw err;
+                                });
+                        }
+                        updateState({ step: Step.GENDER });
+                        break;
                     case Step.GENDER: updateState({ step: Step.AGE }); break;
                     case Step.AGE: updateState({ step: Step.WEIGHT }); break;
                     case Step.WEIGHT: updateState({ step: Step.HEIGHT }); break;
@@ -869,24 +936,23 @@
             };
 
             const handleAnalyze = async () => {
-                
                 try {
-                    updateState({ 
-                        loadingState: LoadingState.UPLOADING, 
-                        loadingMessage: 'Subiendo imagen...', 
-                        loadingSubMessage: 'PROCESANDO ARCHIVO' 
-                    });
-
-                    const userImageUrl = await uploadUserPhoto(state.userFile);
-
                     updateState({ 
                         loadingState: LoadingState.ANALYZING, 
                         loadingMessage: 'Analizando con IA...', 
-                        loadingSubMessage: 'CALCULANDO TALLE IDEAL',
-                        userImageUrl: userImageUrl
+                        loadingSubMessage: 'CALCULANDO TALLE IDEAL'
                     });
 
-                    const result = await processWithAI(userImageUrl);
+                    let result;
+
+                    if (aiPromiseRef.current) {
+                        // AI was already fired in background on "Continuar"
+                        result = await aiPromiseRef.current;
+                    } else {
+                        // Fallback: fire AI now (shouldn't normally happen)
+                        console.warn('[Clostech] AI not fired in background, firing now');
+                        result = await processWithAI(state.userImageUrl);
+                    }
 
                     saveUsageToLocalStorage(result.result_image_url);
 
@@ -946,8 +1012,10 @@
                         recommendedSize={state.recommendedSize}
                         errorMessage={state.errorMessage}
                         isReprocessing={state.isReprocessing}
+                        isUploading={state.isUploading}
                         onUpload={handleUpload}
                         onReset={handleReset}
+                        onClose={handleClose}
                         onUpdateUser={updateUserData}
                         onNext={handleNext}
                         onBack={handleBack}
