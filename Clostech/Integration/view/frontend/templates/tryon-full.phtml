@@ -257,22 +257,28 @@
         };
 
         const processWithAI = async (userImageUrl, { variantId = null, variantValues = null, clothImageUrl = null } = {}) => {
+            const payload = {
+                api_key: CONFIG.apiKey,
+                store_id: CONFIG.storeId ? String(CONFIG.storeId) : undefined,
+                product_id: CONFIG.productId ? String(CONFIG.productId) : undefined,
+                variant_id: variantId ? String(variantId) : undefined,
+                variant_values: Array.isArray(variantValues) ? variantValues : undefined,
+                user_image_url: userImageUrl,
+                cloth_image_url: clothImageUrl || CONFIG.productImage
+            };
+            console.log('[Clostech] AI payload:', payload);
+
             const response = await fetch(`${CLOSTECH_API_URL}/api/ai-v2`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    api_key: CONFIG.apiKey,
-                    store_id: CONFIG.storeId,
-                    client_id: CONFIG.clientId,
-                    product_id: CONFIG.productId,
-                    variant_id: variantId,
-                    variant_values: variantValues,
-                    user_image_url: userImageUrl,
-                    cloth_image_url: clothImageUrl || CONFIG.productImage,
-                }),
+                body: JSON.stringify(payload),
             });
 
-            if (!response.ok) throw new Error('Error en el procesamiento de IA');
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({ message: 'Error en IA' }));
+                console.error('[Clostech] AI error response:', errorData);
+                throw new Error(errorData.message || `Error del servicio de IA: ${response.status}`);
+            }
             
             const apiResponse = await response.json();
             
