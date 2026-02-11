@@ -50,6 +50,16 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
+        /* Hide number input spinners */
+        input[type=number]::-webkit-inner-spin-button,
+        input[type=number]::-webkit-outer-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
+        }
+        input[type=number] {
+            -moz-appearance: textfield;
+        }
+
         /* Dynamic primary button using CSS variables from storeStyles */
         .vm-btn-primary-react {
             background: var(--btn-bg, #2196F3);
@@ -515,7 +525,7 @@
                         <span className="absolute right-0 bottom-[30px] text-base text-[#aaa] tracking-wider lowercase">{suffix}</span>
                     </div>
                     <div className="mt-auto flex flex-col gap-6">
-                        <button type="button" onClick={onNext} disabled={!value} className="vm-btn-primary-react w-full py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium transition-colors disabled:!bg-[#f5f5f5] disabled:!border-[#f5f5f5] disabled:!text-[#ccc] disabled:cursor-not-allowed">
+                        <button type="button" onClick={onNext} disabled={!value} className="vm-btn-primary-react w-full py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed">
                             {isLastStep ? 'Analizar' : 'Siguiente'}
                         </button>
                         <button type="button" onClick={onBack} className="w-full bg-transparent text-[#999] hover:text-black text-[0.7rem] uppercase tracking-[0.1em] transition-colors">Atrás</button>
