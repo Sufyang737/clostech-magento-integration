@@ -568,7 +568,6 @@
             const [selectedSize, setSelectedSize] = useState(recommendedSize || SIZES[1] || 'L');
             const [selectedColor, setSelectedColor] = useState(COLORS[0]?.name || 'Black');
             const [isAdding, setIsAdding] = useState(false);
-            const isFirstRender = useRef(true);
             const debounceTimer = useRef(null);
 
             const titles = userData.gender === 'male'
@@ -576,10 +575,11 @@
                 : ['Estás radiante', 'Te queda divino', 'Silueta Perfecta'];
             const [randomTitle] = useState(() => titles[Math.floor(Math.random() * titles.length)]);
 
-            // Debounced reprocessing when size or color changes
+            // Debounced reprocessing only when COLOR changes (not size)
+            const isFirstColorRender = useRef(true);
             useEffect(() => {
-                if (isFirstRender.current) {
-                    isFirstRender.current = false;
+                if (isFirstColorRender.current) {
+                    isFirstColorRender.current = false;
                     return;
                 }
                 if (isSimpleProduct) return;
@@ -597,7 +597,7 @@
                 }, 800);
 
                 return () => { if (debounceTimer.current) clearTimeout(debounceTimer.current); };
-            }, [selectedSize, selectedColor]);
+            }, [selectedColor]);
 
             const handleAddToCart = async () => {
                 try {
@@ -663,14 +663,14 @@
 
                     {/* Size scale: sizes on top, line in middle, labels below */}
                     <div className="w-full max-w-[320px] mx-auto mb-12 select-none">
-                        {/* Size letters */}
+                        {/* Size letters - static, not selectable */}
                         <div className="flex justify-between items-end w-full px-1 mb-3">
                             {SIZES.map((size) => {
                                 const isSelected = selectedSize === size;
                                 return (
-                                    <button key={size} onClick={() => setSelectedSize(size)} className="flex flex-col items-center focus:outline-none cursor-pointer" style={{ minWidth: '50px' }}>
+                                    <div key={size} className="flex flex-col items-center" style={{ minWidth: '50px' }}>
                                         <span className={`text-base leading-none transition-all duration-300 ${isSelected ? 'text-black font-bold' : 'text-[#999] font-normal'}`}>{size}</span>
-                                    </button>
+                                    </div>
                                 );
                             })}
                         </div>
