@@ -663,14 +663,14 @@
 
                     {/* Size scale: sizes on top, line in middle, labels below */}
                     <div className="w-full max-w-[320px] mx-auto mb-12 select-none">
-                        {/* Size letters - static, not selectable */}
+                        {/* Size letters - selectable for cart, no reprocessing */}
                         <div className="flex justify-between items-end w-full px-1 mb-3">
                             {SIZES.map((size) => {
                                 const isSelected = selectedSize === size;
                                 return (
-                                    <div key={size} className="flex flex-col items-center" style={{ minWidth: '50px' }}>
+                                    <button key={size} onClick={() => setSelectedSize(size)} className="flex flex-col items-center focus:outline-none cursor-pointer" style={{ minWidth: '50px' }}>
                                         <span className={`text-base leading-none transition-all duration-300 ${isSelected ? 'text-black font-bold' : 'text-[#999] font-normal'}`}>{size}</span>
-                                    </div>
+                                    </button>
                                 );
                             })}
                         </div>
