@@ -544,7 +544,7 @@
         };
 
         // Obtener sizes y colors dinámicamente de CONFIG
-        const SIZES = CONFIG.options.sizes.length > 0 ? CONFIG.options.sizes : ['M', 'L', 'XL'];
+        const SIZES = (CONFIG.options.sizes.length > 0 ? CONFIG.options.sizes : ['M', 'L', 'XL']).filter(s => ['M', 'L', 'XL'].includes(s));
 
         const colorMap = {
             'Black': '#1a1a1a',
