@@ -19,9 +19,6 @@
     <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
 
-    <!-- Lucide Icons (Core) -->
-    <script src="https://unpkg.com/lucide@latest"></script>
-
     <!-- Babel para procesar React (JSX) en el navegador -->
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
@@ -103,26 +100,84 @@
         })();
 
         // =====================================================================
-        // ICONS
+        // ICONS - Inline SVGs (no external CDN dependency)
+        // Matching Phosphor Light style from main.js
         // =====================================================================
-        const Icon = ({ name, size = 24, strokeWidth = 2, className = "", ...props }) => {
-            if (typeof lucide === 'undefined') return null;
-            const icon = lucide.icons[name];
-            if (!icon) return null;
-            const svg = icon.toSvg({ width: size, height: size, 'stroke-width': strokeWidth, class: className, ...props });
-            return <span dangerouslySetInnerHTML={{ __html: svg }} className="inline-flex items-center justify-center" />;
-        };
+        const SunIcon = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="128" cy="128" r="60" />
+                <line x1="128" y1="36" x2="128" y2="16" />
+                <line x1="63" y1="63" x2="49" y2="49" />
+                <line x1="36" y1="128" x2="16" y2="128" />
+                <line x1="63" y1="193" x2="49" y2="207" />
+                <line x1="128" y1="220" x2="128" y2="240" />
+                <line x1="193" y1="193" x2="207" y2="207" />
+                <line x1="220" y1="128" x2="240" y2="128" />
+                <line x1="193" y1="63" x2="207" y2="49" />
+            </svg>
+        );
 
-        const Sun = (props) => <Icon name="sun" {...props} />;
-        const User = (props) => <Icon name="user" {...props} />;
-        const UploadCloud = (props) => <Icon name="upload-cloud" {...props} />;
-        const CheckCircle2 = (props) => <Icon name="check-circle-2" {...props} />;
-        const CircleUser = (props) => <Icon name="circle-user" {...props} />;
-        const X = (props) => <Icon name="x" {...props} />;
-        const ShoppingBag = (props) => <Icon name="shopping-bag" {...props} />;
-        const MessageCircle = (props) => <Icon name="message-circle" {...props} />;
-        const Download = (props) => <Icon name="download" {...props} />;
-        const AlertCircle = (props) => <Icon name="alert-circle" {...props} />;
+        const PersonSimpleIcon = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="128" cy="36" r="24" />
+                <line x1="128" y1="60" x2="128" y2="168" />
+                <line x1="128" y1="168" x2="80" y2="240" />
+                <line x1="128" y1="168" x2="176" y2="240" />
+                <line x1="56" y1="120" x2="200" y2="120" />
+            </svg>
+        );
+
+        const XIcon = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="200" y1="56" x2="56" y2="200" />
+                <line x1="200" y1="200" x2="56" y2="56" />
+            </svg>
+        );
+
+        const CheckCircleIcon = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="128" cy="128" r="96" />
+                <polyline points="88 136 112 160 168 104" />
+            </svg>
+        );
+
+        const UploadIcon = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="86 82 128 40 170 82" />
+                <line x1="128" y1="40" x2="128" y2="176" />
+                <path d="M216,152v56a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V152" />
+            </svg>
+        );
+
+        const ShoppingBagIcon = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+                <rect x="32" y="72" width="192" height="152" rx="8" />
+                <path d="M88,72V64a40,40,0,0,1,80,0v8" />
+            </svg>
+        );
+
+        const WhatsAppIcon = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M128,28A100,100,0,0,0,45.1,190.2L36,224l33.8-9.1A100,100,0,1,0,128,28Z" />
+                <path d="M100,120a28,28,0,0,0,28,28h0a28,28,0,0,0,28-28v-8a28,28,0,0,0-28-28h0a28,28,0,0,0-28,28Z" />
+            </svg>
+        );
+
+        const DownloadIcon = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+                <polyline points="86 174 128 216 170 174" />
+                <line x1="128" y1="216" x2="128" y2="80" />
+                <path d="M216,152v56a8,8,0,0,1-8,8H48a8,8,0,0,1-8-8V152" />
+            </svg>
+        );
+
+        const AlertCircleIcon = ({ size = 24 }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 256 256" fill="none" stroke="currentColor" strokeWidth="12" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="128" cy="128" r="96" />
+                <line x1="128" y1="80" x2="128" y2="136" />
+                <circle cx="128" cy="172" r="8" fill="currentColor" stroke="none" />
+            </svg>
+        );
 
         // Business Logo component (replaces eyebrow indicators)
         const BusinessLogo = () => CONFIG.businessLogo ? (
@@ -316,7 +371,7 @@
 
         const ErrorDisplay = ({ message, onRetry }) => (
             <div className="flex flex-col items-center justify-center h-full text-center animate-fade-in p-8">
-                <AlertCircle className="w-16 h-16 text-red-500 mb-6" />
+                <div className="w-16 h-16 text-red-500 mb-6"><AlertCircleIcon size={64} /></div>
                 <h2 className="text-[2.5rem] font-light mb-4 text-black tracking-tight leading-tight">Ocurrió un error</h2>
                 <p className="text-[0.9rem] text-[#666] mb-8 max-w-md leading-relaxed">{message}</p>
                 <button onClick={onRetry} className="vm-btn-primary-react w-full py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium transition-colors">
@@ -377,12 +432,12 @@
                     </p>
                     <div className="flex gap-8 mb-10 md:mb-14">
                         <div className="flex-1">
-                            <Sun size={32} strokeWidth={1} className="mb-4 text-black" />
+                            <div className="mb-4 text-black"><SunIcon size={32} /></div>
                             <div className="text-[0.75rem] font-bold uppercase tracking-[0.05em] mb-1.5">Iluminación</div>
                             <div className="text-[0.8rem] text-[#666] leading-snug">Luz natural frontal.</div>
                         </div>
                         <div className="flex-1">
-                            <User size={32} strokeWidth={1} className="mb-4 text-black" />
+                            <div className="mb-4 text-black"><PersonSimpleIcon size={32} /></div>
                             <div className="text-[0.75rem] font-bold uppercase tracking-[0.05em] mb-1.5">Posición</div>
                             <div className="text-[0.8rem] text-[#666] leading-snug">Cuerpo entero frontal.</div>
                         </div>
@@ -390,7 +445,7 @@
                     <input type="file" hidden ref={fileInputRef} accept="image/*" onChange={handleFileChange} />
                     <div className="mt-auto md:mt-0 pt-2">
                         <button type="button" onClick={() => fileInputRef.current?.click()} className="vm-btn-primary-react w-full py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium active:scale-[0.99] transition-all flex items-center justify-center gap-3">
-                            <UploadCloud size={18} />
+                            <UploadIcon size={18} />
                             Subir Foto
                         </button>
                         <p className="text-center text-[0.7rem] text-[#999] mt-4">Privacidad asegurada.</p>
@@ -406,12 +461,12 @@
                 <MobileVisualImg src={DEFAULT_IMAGES.default} />
                 <div className="flex flex-col gap-4 mb-10">
                     <div className="flex items-center gap-4 py-4 border-b border-[#f5f5f5]">
-                        <CheckCircle2 size={20} strokeWidth={1.5} className="text-black" />
+                        <span className="text-black"><CheckCircleIcon size={20} /></span>
                         <span className="text-[0.9rem] font-medium text-[#111]">Iluminación</span>
                         <span className="text-[0.8rem] text-[#888] font-mono ml-auto">100%</span>
                     </div>
                     <div className="flex items-center gap-4 py-4 border-b border-[#f5f5f5]">
-                        <CheckCircle2 size={20} strokeWidth={1.5} className="text-black" />
+                        <span className="text-black"><CheckCircleIcon size={20} /></span>
                         <span className="text-[0.9rem] font-medium text-[#111]">Contraste</span>
                         <span className="text-[0.8rem] text-[#888] font-mono ml-auto">CLARO</span>
                     </div>
@@ -634,14 +689,14 @@
                                 disabled={isAdding || isReprocessing}
                                 className="vm-btn-primary-react flex items-center justify-center gap-3 py-7 px-8 text-[0.85rem] uppercase tracking-[0.15em] font-medium transition-colors active:scale-[0.99] disabled:!opacity-50 disabled:cursor-not-allowed"
                             >
-                                <ShoppingBag size={18} />
+                                <ShoppingBagIcon size={18} />
                                 <span>{isAdding ? 'Agregando...' : `Añadir ${selectedSize}`}</span>
                             </button>
                             <button onClick={handleWhatsapp} className="w-[50px] bg-white border border-[#e5e5e5] flex items-center justify-center hover:border-[#25D366] hover:text-[#25D366] transition-all text-[#333] text-[1.2rem]">
-                                <MessageCircle size={20} />
+                                <WhatsAppIcon size={20} />
                             </button>
                             <button className="w-[50px] bg-white border border-[#e5e5e5] flex items-center justify-center hover:border-black hover:text-black transition-all text-[#333] text-[1.2rem]">
-                                <Download size={20} />
+                                <DownloadIcon size={20} />
                             </button>
                         </div>
                         <button type="button" onClick={onReset} className="w-full text-center text-[#999] hover:text-black text-[0.7rem] uppercase tracking-[0.1em] transition-colors py-2 mt-4">Probar otra prenda</button>
@@ -671,7 +726,7 @@
                         <div className="flex flex-col min-h-full py-6 px-5 md:py-[70px] md:px-[60px] justify-center">
                             <div className="absolute top-0 right-0 p-5 md:p-8 z-10">
                                 <button onClick={onReset} className="text-[#111] hover:rotate-90 transition-transform duration-300 cursor-pointer" style={{ fontSize: '32px' }}>
-                                    <X size={28} strokeWidth={1.5} />
+                                    <XIcon size={28} />
                                 </button>
                             </div>
                             {loadingState !== LoadingState.IDLE && (
@@ -725,13 +780,15 @@
 
             // Fetch store customizations on mount (same endpoint as main.js)
             useEffect(() => {
-                if (!CONFIG.storeId) return;
+                if (!CONFIG.storeId) { console.warn('[Clostech] No storeId - skipping customizations fetch'); return; }
+                console.log('[Clostech] Fetching customizations for store:', CONFIG.storeId);
                 fetch(`${CLOSTECH_API_URL}/api/stores/${CONFIG.storeId}/customizations`, {
                     headers: { 'ngrok-skip-browser-warning': 'true' }
                 })
-                .then(res => res.ok ? res.json() : null)
+                .then(res => { console.log('[Clostech] Customizations response:', res.status); return res.ok ? res.json() : null; })
                 .then(data => {
-                    if (!data) return;
+                    if (!data) { console.warn('[Clostech] No customization data'); return; }
+                    console.log('[Clostech] Customizations loaded:', data);
                     setStoreStyles(data);
                     // Apply button colors as CSS variables
                     const root = document.documentElement;
@@ -757,7 +814,7 @@
                         );
                     }
                 })
-                .catch(() => {});
+                .catch((err) => { console.error('[Clostech] Error fetching customizations:', err); });
             }, []);
 
             const updateState = (updates) => setState((prev) => ({ ...prev, ...updates }));
