@@ -94,51 +94,6 @@ class StoreValidation implements StoreValidationInterface
                         'clostech_sync' => false
                     ];
                 }
-                
-                // Retry logic con instancia cURL limpia en cada intento
-                $credentials = ['success' => false];
-                $maxAttempts = 5;
-                $delaySeconds = 3;
-                
-                for ($attempt = 1; $attempt <= $maxAttempts; $attempt++) {
-                    $this->logger->info("Intento {$attempt} de {$maxAttempts} para obtener credenciales");
-                    
-                    if ($attempt > 1) {
-                        sleep($delaySeconds);
-                    }
-                    
-                    $credentials = $this->getApiCredentials($storeId);
-                    
-                    if ($credentials['success']) {
-                        $this->logger->info("Credenciales obtenidas exitosamente en intento {$attempt}");
-                        break;
-                    }
-                    
-                    $this->logger->warning("Intento {$attempt} fallido, reintentando...");
-                }
-                
-                if ($credentials['success']) {
-                    $this->configWriter->save(
-                        'clostech/integration/api_key',
-                        $credentials['api_key'],
-                        \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-                        0
-                    );
-                    
-                    $this->configWriter->save(
-                        'clostech/integration/client_id',
-                        $credentials['client_id'],
-                        \Magento\Framework\App\Config\ScopeConfigInterface::SCOPE_TYPE_DEFAULT,
-                        0
-                    );
-                    
-                    $this->logger->info('Credenciales guardadas', [
-                        'api_key' => substr($credentials['api_key'], 0, 10) . '...',
-                        'client_id' => $credentials['client_id']
-                    ]);
-                } else {
-                    $this->logger->warning('No se pudieron recuperar las credenciales de la API de Clostech después de ' . $maxAttempts . ' intentos');
-                }
             }
             
             $this->logger->info('Tienda validada con exito', [
@@ -227,7 +182,7 @@ class StoreValidation implements StoreValidationInterface
         }
     }
     
-    private function getApiCredentials(string $storeId): array
+    public function getApiCredentials(string $storeId): array
     {
         try {
             $clostechUrl = $this->getClostechUrl();
