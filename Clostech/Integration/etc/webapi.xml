@@ -21,12 +21,4 @@
             <resource ref="anonymous"/>
         </resources>
     </route>
-
-    <!-- endpoint para sincronizar credenciales -->
-    <route url="/V1/clostech/credentials/sync" method="POST">
-        <service class="Clostech\Integration\Api\CredentialsSyncInterface" method="sync"/>
-        <resources>
-            <resource ref="anonymous"/>
-        </resources>
-    </route>
 </routes>

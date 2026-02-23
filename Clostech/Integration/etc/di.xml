@@ -10,6 +10,4 @@
                 type="Clostech\Integration\Model\Data\Variant"/>
     <preference for="Clostech\Integration\Api\StoreValidationInterface" 
                 type="Clostech\Integration\Model\StoreValidation"/>
-    <preference for="Clostech\Integration\Api\CredentialsSyncInterface" 
-                type="Clostech\Integration\Model\CredentialsSync"/>
 </config> 
